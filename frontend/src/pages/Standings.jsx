@@ -12,14 +12,20 @@ const Standings = () => {
   const [error, setError] = useState('');
   const [cacheStatus, setCacheStatus] = useState('');
 
+  const [imageErrors, setImageErrors] = useState({});
+
+  const handleImageError = (id) => {
+    setImageErrors(prev => ({ ...prev, [id]: true }));
+  };
+
   // Popular competitions
   const popularComps = [
-    { id: 'PL', name: 'Premier League', icon: Flag, country: 'England' },
-    { id: 'PD', name: 'La Liga', icon: Flag, country: 'Spain' },
-    { id: 'SA', name: 'Serie A', icon: Flag, country: 'Italy' },
-    { id: 'BL1', name: 'Bundesliga', icon: Flag, country: 'Germany' },
-    { id: 'FL1', name: 'Ligue 1', icon: Flag, country: 'France' },
-    { id: 'CL', name: 'UEFA Champions League', icon: Trophy, country: 'Europe' },
+    { id: 'PL', name: 'Premier League', emblem: 'https://crests.football-data.org/PL.png', country: 'England', icon: Flag },
+    { id: 'PD', name: 'La Liga', emblem: 'https://crests.football-data.org/PD.png', country: 'Spain', icon: Flag },
+    { id: 'SA', name: 'Serie A', emblem: 'https://crests.football-data.org/SA.png', country: 'Italy', icon: Flag },
+    { id: 'BL1', name: 'Bundesliga', emblem: 'https://crests.football-data.org/BL1.png', country: 'Germany', icon: Flag },
+    { id: 'FL1', name: 'Ligue 1', emblem: 'https://crests.football-data.org/FL1.png', country: 'France', icon: Flag },
+    { id: 'CL', name: 'Champions League', emblem: 'https://crests.football-data.org/CL.png', country: 'Europe', icon: Trophy },
   ];
 
   // Fetch standings when competition changes
@@ -50,19 +56,19 @@ const Standings = () => {
 
   const getPositionIndicator = (position, total) => {
     // Champions
-    if (position <= 2) return { color: 'text-[#00ff87]', bg: 'bg-[#00ff87]/10', label: 'Champion' };
+    if (position <= 2) return { color: 'text-white', bg: 'bg-white/10', label: 'Champion' };
     // Europa League
-    if (position <= 6) return { color: 'text-blue-400', bg: 'bg-blue-500/10', label: 'Europa' };
+    if (position <= 6) return { color: 'text-gray-300', bg: 'bg-[#222]', label: 'Europa' };
     // Playoffs
-    if (position <= 8) return { color: 'text-yellow-400', bg: 'bg-yellow-500/10', label: 'Playoff' };
+    if (position <= 8) return { color: 'text-gray-400', bg: 'bg-[#1a1a1a]', label: 'Playoff' };
     // Relegation
-    if (position > total - 3) return { color: 'text-red-400', bg: 'bg-red-500/10', label: 'Danger' };
+    if (position > total - 3) return { color: 'text-gray-500', bg: 'bg-[#111]', label: 'Danger' };
     
-    return { color: 'text-gray-400', bg: 'bg-white/5', label: '' };
+    return { color: 'text-gray-400', bg: 'bg-transparent', label: '' };
   };
 
   return (
-    <div className="bg-[#0e0e0e] min-h-screen text-white font-sans">
+    <div className="bg-[#0e0e0e] min-h-screen text-white">
       <Navbar />
 
       <main className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -72,18 +78,28 @@ const Standings = () => {
         <div className="mb-8">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {popularComps.map(comp => {
-              const IconComponent = comp.icon;
               return (
                 <button
                   key={comp.id}
                   onClick={() => setSelectedCompetition(comp.id)}
                   className={`p-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
                     selectedCompetition === comp.id
-                      ? 'bg-[#00ff87] text-black shadow-lg shadow-[#00ff87]/30'
-                      : 'bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10'
+                      ? 'bg-white text-black shadow-lg'
+                      : 'bg-[#111] border border-[#222] text-gray-300 hover:bg-[#1a1a1a]'
                   }`}
                 >
-                  <IconComponent size={18} />
+                  <div className="w-5 h-5 flex items-center justify-center">
+                    {!imageErrors[comp.id] ? (
+                      <img 
+                        src={comp.emblem} 
+                        alt={comp.name} 
+                        className="w-full h-full object-contain" 
+                        onError={() => handleImageError(comp.id)}
+                      />
+                    ) : (
+                      <comp.icon size={18} />
+                    )}
+                  </div>
                   <div className="flex flex-col items-start">
                     <span className="text-xs font-bold">{comp.name}</span>
                     <span className="text-[10px] opacity-75">{comp.country}</span>
@@ -109,8 +125,8 @@ const Standings = () => {
         {loading ? (
           <div className="text-center py-16">
             <div className="inline-block">
-              <div className="animate-spin mb-4">
-                <Trophy size={32} className="text-[#00ff87]" />
+              <div className="animate-spin mb-4 text-center">
+                <Trophy size={32} className="text-gray-400 mx-auto" />
               </div>
               <p className="text-gray-400 font-medium">Loading standings...</p>
             </div>
@@ -119,7 +135,7 @@ const Standings = () => {
           // Standings Table
           <div className="space-y-6">
             {standings.standings.map((stage, stageIdx) => (
-              <div key={stageIdx} className="glass rounded-2xl border border-white/10 overflow-hidden">
+              <div key={stageIdx} className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden">
                 {/* Stage Title */}
 
 
@@ -136,7 +152,7 @@ const Standings = () => {
                         <th className="text-center px-4 py-3 font-bold text-gray-400 text-xs uppercase tracking-wider">L</th>
                         <th className="text-center px-4 py-3 font-bold text-gray-400 text-xs uppercase tracking-wider">GF</th>
                         <th className="text-center px-4 py-3 font-bold text-gray-400 text-xs uppercase tracking-wider">GA</th>
-                        <th className="text-center px-4 py-3 font-bold text-[#00ff87] text-xs uppercase tracking-wider font-black">PTS</th>
+                        <th className="text-center px-4 py-3 font-bold text-white text-xs uppercase tracking-wider font-black">PTS</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -169,12 +185,12 @@ const Standings = () => {
                               </div>
                             </td>
                             <td className="px-4 py-3 text-center">{entry.playedGames}</td>
-                            <td className="px-4 py-3 text-center text-green-400 font-semibold">{entry.won}</td>
-                            <td className="px-4 py-3 text-center text-yellow-400 font-semibold">{entry.draw}</td>
-                            <td className="px-4 py-3 text-center text-red-400 font-semibold">{entry.lost}</td>
-                            <td className="px-4 py-3 text-center">{entry.goalsFor}</td>
-                            <td className="px-4 py-3 text-center">{entry.goalsAgainst}</td>
-                            <td className="px-4 py-3 text-center font-black text-[#00ff87] text-lg">
+                            <td className="px-4 py-3 text-center text-gray-300 font-semibold">{entry.won}</td>
+                            <td className="px-4 py-3 text-center text-gray-400 font-semibold">{entry.draw}</td>
+                            <td className="px-4 py-3 text-center text-gray-500 font-semibold">{entry.lost}</td>
+                            <td className="px-4 py-3 text-center text-gray-400">{entry.goalsFor}</td>
+                            <td className="px-4 py-3 text-center text-gray-400">{entry.goalsAgainst}</td>
+                            <td className="px-4 py-3 text-center font-black text-white text-lg">
                               {entry.points}
                             </td>
                           </tr>
@@ -185,21 +201,21 @@ const Standings = () => {
                 </div>
 
                 {/* Legend */}
-                <div className="px-6 py-4 border-t border-white/10 flex flex-wrap gap-6 text-xs">
+                <div className="px-6 py-4 border-t border-[#222] flex flex-wrap gap-6 text-xs bg-[#0a0a0a]">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-[#00ff87]/20 border border-[#00ff87]"></div>
+                    <div className="w-3 h-3 rounded bg-white/20 border border-white"></div>
                     <span className="text-gray-400">Champions</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-blue-500/20 border border-blue-400"></div>
+                    <div className="w-3 h-3 rounded bg-[#222] border border-gray-400"></div>
                     <span className="text-gray-400">Europa League</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-yellow-500/20 border border-yellow-400"></div>
+                    <div className="w-3 h-3 rounded bg-[#1a1a1a] border border-gray-500"></div>
                     <span className="text-gray-400">Playoff</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-red-500/20 border border-red-400"></div>
+                    <div className="w-3 h-3 rounded bg-[#111] border border-gray-600"></div>
                     <span className="text-gray-400">Relegation</span>
                   </div>
                 </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-function getDateRange(center, spread = 4) {
+function getDateRange(center, spread = 3) {
   const dates = []
   for (let i = -spread; i <= spread; i++) {
     const d = new Date(center)
@@ -50,11 +50,11 @@ function DateNav({ selectedDate, onSelectDate }) {
               <button
                 key={i}
                 onClick={() => onSelectDate(d)}
-                className={`flex flex-col items-center py-2 px-2.5 rounded-xl min-w-[46px] transition-all relative flex-shrink-0 ${sel ? 'bg-white text-black' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'}`}
+                className={`flex flex-col items-center py-1.5 px-2 rounded-lg min-w-[40px] transition-all relative flex-shrink-0 ${sel ? 'bg-white text-black' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'}`}
               >
-                <span className="text-[10px] font-semibold uppercase">{DAYS[d.getDay()]}</span>
-                <span className={`text-sm font-bold ${sel ? '' : tod ? 'text-white' : ''}`}>{d.getDate()}</span>
-                {tod && !sel && <span className="absolute bottom-1 w-1 h-1 rounded-full bg-white" />}
+                <span className="text-[10px] font-medium uppercase">{DAYS[d.getDay()]}</span>
+                <span className={`text-xs font-semibold ${sel ? '' : tod ? 'text-white' : ''}`}>{d.getDate()}</span>
+                {tod && !sel && <span className="absolute bottom-0 w-1 h-1 rounded-full bg-white" />}
               </button>
             )
           })}
@@ -79,7 +79,7 @@ function DateNav({ selectedDate, onSelectDate }) {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${
               filter === f
                 ? f === 'Live' ? 'bg-neutral-800 text-white' : 'bg-white text-black'
                 : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'

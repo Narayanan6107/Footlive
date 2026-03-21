@@ -24,12 +24,12 @@ const Navbar = () => {
 
   return (
     <nav className="bg-black text-white border-b border-[#222] sticky top-0 z-50 backdrop-blur-xl bg-opacity-95">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo and Main Nav */}
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0 flex items-center pr-6">
-              <span className="text-2xl font-bold tracking-tight text-[#00ff87]">Footlive</span>
+              <img src="/src/assets/logo.png" alt="Footlive" className="h-18 w-auto mr-2" />
             </Link>
           </div>
 
@@ -66,7 +66,7 @@ const Navbar = () => {
                     onClick={() => setShowMenu(!showMenu)}
                     className="flex items-center gap-2 p-2 rounded-full transition-colors hover:bg-[#1a1a1a]"
                   >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00ff87] to-[#00e67a] flex items-center justify-center text-black text-sm font-bold">
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-black text-sm font-bold">
                       {username.charAt(0).toUpperCase()}
                     </div>
                     <span className="hidden md:inline text-sm font-medium text-gray-400 max-w-[100px] truncate">
@@ -86,7 +86,7 @@ const Navbar = () => {
                         onClick={() => setShowMenu(false)}
                         className="flex items-center gap-2 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
                       >
-                        <User size={16} className="text-[#00ff87]" />
+                        <User size={16} className="text-white" />
                         View Profile
                       </Link>
                       <button

@@ -6,6 +6,9 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Profile from './pages/Profile'
 import Standings from './pages/Standings'
+import Tools from './pages/Tools'
+import Lineup from './pages/Lineup'
+import Simulator from './pages/Simulator'
 import './App.css'
 
 function App() {
@@ -20,6 +23,9 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/standings" element={<Standings />} />
+        <Route path="/tools" element={<Tools />} />
+        <Route path="/tools/lineup" element={<Lineup />} />
+        <Route path="/tools/simulator" element={<Simulator />} />
       </Routes>
     </Router>
   )

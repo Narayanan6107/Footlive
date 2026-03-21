@@ -105,10 +105,7 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen mesh-bg flex flex-col items-center justify-center p-4 selection:bg-[#00ff87] selection:text-black relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute top-0 left-1/3 w-96 h-96 bg-[#00ff87]/5 blur-[120px] rounded-full -translate-x-1/2 -translate-y-1/2"></div>
-      <div className="absolute bottom-0 right-1/3 w-96 h-96 bg-[#00ff87]/5 blur-[120px] rounded-full translate-x-1/2 translate-y-1/2"></div>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 selection:bg-white/30 selection:text-white relative overflow-hidden bg-[#0e0e0e]">
 
       {/* Back to Home */}
       <Link to="/" className="absolute top-8 left-8 flex items-center space-x-2 text-gray-500 hover:text-white transition-colors group z-10">
@@ -119,12 +116,12 @@ const Signup = () => {
       <div className="w-full max-w-[460px] animate-in fade-in zoom-in duration-700 relative z-10">
         {/* Header Section */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#00ff87] text-[10px] font-bold uppercase tracking-[0.2em] mb-4 shadow-[0_0_15px_rgba(0,255,135,0.05)]">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#111] border border-[#222] text-white text-[10px] font-bold uppercase tracking-[0.2em] mb-4">
             <ShieldCheck size={12} />
             <span>Registration Open</span>
           </div>
           <h1 className="text-4xl font-extrabold text-white tracking-tight mb-3">
-            Start your <span className="text-[#00ff87]">legacy.</span>
+            Start your <span className="text-gray-300">legacy.</span>
           </h1>
           <p className="text-gray-400 text-sm font-medium leading-relaxed px-4">
             Join the elite circle of tactical fans. <br/>
@@ -149,22 +146,20 @@ const Signup = () => {
         )}
 
         {/* Signup Card */}
-        <div className="glass rounded-[32px] p-10 overflow-hidden relative border border-white/10 shadow-2xl">
-          {/* Subtle decorative glow */}
-          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-[#00ff87]/5 blur-[100px] rounded-full pointer-events-none"></div>
+        <div className="bg-[#111] rounded-[32px] p-10 overflow-hidden relative border border-[#222] shadow-2xl">
           
           <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
             <div className="space-y-2">
               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-[0.15em] ml-1">Username</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-[#00ff87] transition-colors">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-white transition-colors">
                   <User size={18} />
                 </div>
                 <input
                   type="text"
                   name="username"
                   required
-                  className="w-full bg-white/[0.03] border border-white/10 text-white rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#00ff87] focus:ring-4 focus:ring-[#00ff87]/5 transition-all placeholder-gray-600 text-sm"
+                  className="w-full bg-[#0e0e0e] border border-[#333] text-white rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-white focus:ring-4 focus:ring-white/10 transition-all placeholder-gray-600 text-sm"
                   placeholder="pep_guardiola"
                   value={formData.username}
                   onChange={handleChange}
@@ -176,14 +171,14 @@ const Signup = () => {
             <div className="space-y-2">
               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-[0.15em] ml-1">Email Address</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-[#00ff87] transition-colors">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-white transition-colors">
                   <Mail size={18} />
                 </div>
                 <input
                   type="email"
                   name="email"
                   required
-                  className="w-full bg-white/[0.03] border border-white/10 text-white rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#00ff87] focus:ring-4 focus:ring-[#00ff87]/5 transition-all placeholder-gray-600 text-sm"
+                  className="w-full bg-[#0e0e0e] border border-[#333] text-white rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-white focus:ring-4 focus:ring-white/10 transition-all placeholder-gray-600 text-sm"
                   placeholder="pep@city.com"
                   value={formData.email}
                   onChange={handleChange}
@@ -195,14 +190,14 @@ const Signup = () => {
             <div className="space-y-2">
               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-[0.15em] ml-1">Password</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-[#00ff87] transition-colors">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-white transition-colors">
                   <Lock size={18} />
                 </div>
                 <input
                   type="password"
                   name="password"
                   required
-                  className="w-full bg-white/[0.03] border border-white/10 text-white rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#00ff87] focus:ring-4 focus:ring-[#00ff87]/5 transition-all placeholder-gray-600 text-sm"
+                  className="w-full bg-[#0e0e0e] border border-[#333] text-white rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-white focus:ring-4 focus:ring-white/10 transition-all placeholder-gray-600 text-sm"
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={handleChange}
@@ -214,14 +209,14 @@ const Signup = () => {
             <div className="space-y-2">
               <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-[0.15em] ml-1">Confirm Password</label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-[#00ff87] transition-colors">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-white transition-colors">
                   <Lock size={18} />
                 </div>
                 <input
                   type="password"
                   name="confirmPassword"
                   required
-                  className="w-full bg-white/[0.03] border border-white/10 text-white rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#00ff87] focus:ring-4 focus:ring-[#00ff87]/5 transition-all placeholder-gray-600 text-sm"
+                  className="w-full bg-[#0e0e0e] border border-[#333] text-white rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-white focus:ring-4 focus:ring-white/10 transition-all placeholder-gray-600 text-sm"
                   placeholder="••••••••"
                   value={formData.confirmPassword}
                   onChange={handleChange}
@@ -234,7 +229,7 @@ const Signup = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#00ff87] hover:bg-[#00e67a] text-black font-black py-4 rounded-2xl mt-6 flex items-center justify-center space-x-2 transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_8px_20px_-4px_rgba(0,255,135,0.3)] hover:shadow-[0_12px_30px_-4px_rgba(0,255,135,0.4)]"
+              className="w-full bg-white hover:bg-gray-200 text-black font-black py-4 rounded-2xl mt-6 flex items-center justify-center space-x-2 transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-xl"
             >
               <span className="text-sm tracking-widest uppercase">{loading ? 'Processing...' : 'Deploy Profile'}</span>
               {!loading && <ArrowRight size={18} strokeWidth={3} />}
@@ -244,7 +239,7 @@ const Signup = () => {
           <div className="mt-10 pt-8 border-t border-white/5 text-center">
             <p className="text-gray-500 text-xs font-medium">
               Already have credentials?{' '}
-              <Link to="/login" className="text-white font-bold hover:text-[#00ff87] transition-colors underline decoration-white/20 underline-offset-4 ml-1">Log In</Link>
+              <Link to="/login" className="text-white font-bold hover:text-gray-300 transition-colors underline decoration-white/20 underline-offset-4 ml-1">Log In</Link>
             </p>
           </div>
         </div>

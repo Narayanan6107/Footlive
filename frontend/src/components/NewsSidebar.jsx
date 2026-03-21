@@ -8,7 +8,7 @@ const NewsSidebar = () => {
   const recentNews = footballNews.slice(0, 4);
 
   return (
-    <div className="bg-[#0a0a0a] rounded-xl border border-[#222] overflow-hidden ml-4 hidden lg:block">
+    <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden hidden xl:block">
       <div className="flex items-center justify-between p-4 border-b border-[#222]">
         <h2 className="text-lg font-bold text-white">Top News</h2>
         <Link to="/news" className="text-sm text-gray-400 hover:text-white transition-colors">

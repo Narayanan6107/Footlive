@@ -2,19 +2,25 @@ import React from 'react';
 import { Trophy, Star, Target, Zap, Globe, Award } from 'lucide-react';
 
 const TOP_LEAGUES = [
-  { id: 'PL', name: "Premier League", icon: <Target className="text-purple-500" size={18} /> },
-  { id: 'CL', name: "Champions League", icon: <Star className="text-blue-400" size={18} /> },
-  { id: 'PD', name: "LaLiga", icon: <Zap className="text-orange-500" size={18} /> },
-  { id: 'BL1', name: "Bundesliga", icon: <Target className="text-red-500" size={18} /> },
-  { id: 'SA', name: "Serie A", icon: <Target className="text-blue-600" size={18} /> },
-  { id: 'FL1', name: "Ligue 1", icon: <Target className="text-yellow-600" size={18} /> },
-  { id: 'EL', name: "Europa League", icon: <Award className="text-orange-400" size={18} /> },
-  { id: 'ISL', name: "Indian Super League", icon: <Globe className="text-blue-500" size={18} /> },
-  { id: 'FAC', name: "FA Cup", icon: <Trophy className="text-red-400" size={18} /> },
-  { id: 'WC', name: "FIFA World Cup", icon: <Trophy className="text-yellow-500" size={18} /> },
+  { id: 'PL', name: "Premier League", emblem: "https://crests.football-data.org/PL.png", icon: <Target size={18} /> },
+  { id: 'CL', name: "Champions League", emblem: "https://crests.football-data.org/CL.png", icon: <Star size={18} /> },
+  { id: 'PD', name: "LaLiga", emblem: "https://crests.football-data.org/PD.png", icon: <Zap size={18} /> },
+  { id: 'BL1', name: "Bundesliga", emblem: "https://crests.football-data.org/BL1.png", icon: <Target size={18} /> },
+  { id: 'SA', name: "Serie A", emblem: "https://crests.football-data.org/SA.png", icon: <Target size={18} /> },
+  { id: 'FL1', name: "Ligue 1", emblem: "https://crests.football-data.org/FL1.png", icon: <Target size={18} /> },
+  { id: 'EL', name: "Europa League", emblem: "https://crests.football-data.org/EL.png", icon: <Award size={18} /> },
+  { id: 'ISL', name: "Indian Super League", emblem: "https://upload.wikimedia.org/wikipedia/en/thumb/5/52/Indian_Super_League_logo.svg/1200px-Indian_Super_League_logo.svg.png", icon: <Globe size={18} /> },
+  { id: 'FAC', name: "FA Cup", emblem: "https://upload.wikimedia.org/wikipedia/en/thumb/e/e0/FA_Cup_logo.svg/1200px-FA_Cup_logo.svg.png", icon: <Trophy size={18} /> },
+  { id: 'WC', name: "FIFA World Cup", emblem: "https://upload.wikimedia.org/wikipedia/en/thumb/e/e3/2026_FIFA_World_Cup_logo.svg/1200px-2026_FIFA_World_Cup_logo.svg.png", icon: <Trophy size={18} /> },
 ];
 
 const LeaguesSidebar = ({ selectedLeague, onSelectLeague }) => {
+  const [imageErrors, setImageErrors] = React.useState({});
+
+  const handleImageError = (id) => {
+    setImageErrors(prev => ({ ...prev, [id]: true }));
+  };
+
   return (
     <div className="bg-[#111] rounded-2xl border border-[#222] p-4 text-white">
       <div className="flex items-center justify-between mb-6 px-2">
@@ -53,8 +59,19 @@ const LeaguesSidebar = ({ selectedLeague, onSelectLeague }) => {
               selectedLeague === league.id ? 'bg-[#1a1a1a] ring-1 ring-white/10' : 'hover:bg-[#1a1a1a]'
             }`}
           >
-            <div className="flex-shrink-0">
-              {league.icon}
+            <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+              {!imageErrors[league.id] ? (
+                <img 
+                  src={league.emblem} 
+                  alt={league.name} 
+                  className="w-full h-full object-contain" 
+                  onError={() => handleImageError(league.id)}
+                />
+              ) : (
+                <div className={selectedLeague === league.id ? 'text-white' : 'text-gray-400'}>
+                  {league.icon}
+                </div>
+              )}
             </div>
             <span className={`text-sm font-medium transition-colors ${
               selectedLeague === league.id ? 'text-white' : 'text-gray-300 group-hover:text-white'

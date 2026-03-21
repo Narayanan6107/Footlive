@@ -88,7 +88,11 @@ export const getStandings = async (req, res) => {
                 headers: { 'X-Auth-Token': API_KEY }
             });
             
-            if (!response.ok) throw new Error('Failed to fetch standings');
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error(`❌ API Error [${response.status}] for ${url}:`, errorBody);
+                throw new Error(`Failed to fetch standings: ${response.status}`);
+            }
             return response.json();
         });
 

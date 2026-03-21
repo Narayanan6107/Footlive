@@ -17,11 +17,11 @@ const News = () => {
   });
 
   return (
-    <div className="bg-[#0e0e0e] min-h-screen text-white font-sans">
+    <div className="bg-[#0e0e0e] min-h-screen text-white">
       <Navbar />
       
-      {/* Hero Section */}
-      <section className="border-b border-white/10 bg-gradient-to-b from-[#1a1a1a] to-[#0e0e0e]">
+      {/* Search and Filter Section */}
+      <section className="border-b border-[#222] bg-[#0a0a0a]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Search and Filters */}
           <div className="space-y-6">
@@ -45,8 +45,8 @@ const News = () => {
                   onClick={() => setSelectedCategory(category)}
                   className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
                     selectedCategory === category
-                      ? 'bg-[#00ff87] text-black'
-                      : 'bg-white/5 border border-white/10 text-gray-300 hover:border-[#00ff87] hover:text-[#00ff87]'
+                      ? 'bg-white text-black'
+                      : 'bg-[#111] border border-[#222] text-gray-400 hover:border-white/20 hover:text-white'
                   }`}
                 >
                   {category}
@@ -64,7 +64,7 @@ const News = () => {
             {filteredNews.map((news) => (
               <article 
                 key={news.id} 
-                className="group glass rounded-[24px] border border-white/10 overflow-hidden hover:border-[#00ff87] transition-all duration-300 flex flex-col"
+                className="group bg-[#111] rounded-[24px] border border-[#222] overflow-hidden hover:border-[#444] transition-all duration-300 flex flex-col"
               >
                 {/* Image */}
                 {news.imageUrl ? (
@@ -77,8 +77,8 @@ const News = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
                 ) : (
-                  <div className="h-48 bg-gradient-to-br from-white/5 to-white/[0.02] flex items-center justify-center border-b border-white/10">
-                    <TrendingUp className="w-12 h-12 text-[#00ff87]/30" />
+                  <div className="h-48 bg-gradient-to-br from-[#1a1a1a] to-[#111] flex items-center justify-center border-b border-[#222]">
+                    <TrendingUp className="w-12 h-12 text-gray-600" />
                   </div>
                 )}
 
@@ -86,7 +86,7 @@ const News = () => {
                 <div className="p-6 flex-1 flex flex-col">
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4 gap-4">
-                    <span className="text-xs font-bold uppercase tracking-[0.15em] text-[#00ff87] bg-[#00ff87]/10 px-3 py-1 rounded-full whitespace-nowrap">
+                    <span className="text-xs font-bold uppercase tracking-[0.15em] text-gray-300 bg-[#222] border border-[#333] px-3 py-1 rounded-full whitespace-nowrap">
                       {news.category}
                     </span>
                     <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -96,7 +96,7 @@ const News = () => {
                   </div>
 
                   {/* Title */}
-                  <h2 className="text-lg font-bold text-white group-hover:text-[#00ff87] mb-3 leading-snug transition-colors line-clamp-2 flex-1">
+                  <h2 className="text-lg font-bold text-white mb-3 leading-snug transition-colors line-clamp-2 flex-1">
                     {news.title}
                   </h2>
 
@@ -115,7 +115,7 @@ const News = () => {
                       href={news.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 rounded-full bg-[#00ff87]/10 text-[#00ff87] group-hover:bg-[#00ff87] group-hover:text-black transition-all"
+                      className="p-2 rounded-full bg-[#222] text-gray-400 group-hover:bg-white group-hover:text-black transition-all"
                     >
                       <ArrowUpRight size={18} />
                     </a>

@@ -79,7 +79,7 @@ const Profile = () => {
         {/* Back Button */}
         <button
           onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-[#00ff87] hover:text-[#00e67a] mb-10 transition-colors font-semibold"
+          className="flex items-center gap-2 text-white hover:text-gray-300 mb-10 transition-colors font-semibold"
         >
           <ArrowLeft size={20} />
           Back to Home
@@ -90,13 +90,13 @@ const Profile = () => {
           {/* Hero Section with Avatar */}
           <div className="flex items-start justify-between mb-12 pb-12 border-b border-white/10">
             <div className="flex items-center gap-8">
-              <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-[#00ff87] to-[#00e67a] flex items-center justify-center text-black text-6xl font-black flex-shrink-0">
+              <div className="w-32 h-32 rounded-2xl bg-white flex items-center justify-center text-black text-6xl font-black flex-shrink-0">
                 {userData.username.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1">
                 <h1 className="text-5xl font-black text-white mb-3">{userData.username}</h1>
                 <p className="text-gray-400 flex items-center gap-2 mb-2">
-                  <Shield size={18} className="text-[#00ff87]" />
+                  <Shield size={18} className="text-white" />
                   <span className="font-semibold">Elite Tactical Fan</span>
                 </p>
                 <p className="text-gray-500 text-sm">Member since {userData.joinedDate}</p>
@@ -106,20 +106,20 @@ const Profile = () => {
               onClick={() => !isEditing && setIsEditing(true)}
               className={`p-4 rounded-xl transition-all transition-colors ${
                 isEditing 
-                  ? 'bg-[#00ff87]/20 border border-[#00ff87]' 
-                  : 'hover:bg-white/10 bg-white/5 border border-white/10'
+                  ? 'bg-white text-black' 
+                  : 'hover:bg-[#222] bg-[#111] border border-[#222] text-gray-400'
               }`}
             >
-              <Edit2 size={24} className={isEditing ? 'text-[#00ff87]' : 'text-gray-400'} />
+              <Edit2 size={24} />
             </button>
           </div>
 
           {/* Account Info Cards */}
           <div className=" md:grid-cols-2 gap-6 mb-12">
             {/* Email Card */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+            <div className="bg-[#111] border border-[#222] rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-3">
-                <Mail size={18} className="text-[#00ff87]" />
+                <Mail size={18} className="text-gray-400" />
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">Email Address</span>
               </div>
               <p className="text-white font-semibold text-lg">{userData.email}</p>
@@ -130,18 +130,18 @@ const Profile = () => {
           {/* Tactical Philosophy Card */}
           <div className="mb-8">
             <label className="block text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-4">
-              <Target size={16} className="inline mr-2 text-[#00ff87]" />
+              <Target size={16} className="inline mr-2 text-white" />
               Your Tactical Philosophy
             </label>
             {isEditing ? (
               <textarea
                 value={editData.bio}
                 onChange={(e) => setEditData(prev => ({ ...prev, bio: e.target.value }))}
-                className="w-full bg-white/[0.03] border border-[#00ff87]/30 text-white rounded-2xl py-4 px-4 focus:outline-none focus:border-[#00ff87] focus:ring-4 focus:ring-[#00ff87]/10 transition-all placeholder-gray-600 text-sm resize-none h-28"
+                className="w-full bg-[#111] border border-[#333] text-white rounded-2xl py-4 px-4 focus:outline-none focus:border-white focus:ring-4 focus:ring-white/10 transition-all placeholder-gray-600 text-sm resize-none h-28"
                 placeholder="Share your football philosophy..."
               />
             ) : (
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+              <div className="bg-[#111] border border-[#222] rounded-2xl p-6">
                 <p className="text-gray-300 leading-relaxed">{editData.bio}</p>
               </div>
             )}
@@ -150,14 +150,14 @@ const Profile = () => {
           {/* Formation Selection Card */}
           <div className="mb-10">
             <label className="block text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-4">
-              <Trophy size={16} className="inline mr-2 text-[#00ff87]" />
+              <Trophy size={16} className="inline mr-2 text-white" />
               Preferred Formation
             </label>
             {isEditing ? (
               <select
                 value={editData.favoriteFormation}
                 onChange={(e) => setEditData(prev => ({ ...prev, favoriteFormation: e.target.value }))}
-                className="w-full md:w-80 bg-white/[0.03] border border-[#00ff87]/30 text-white rounded-2xl py-4 px-4 focus:outline-none focus:border-[#00ff87] focus:ring-4 focus:ring-[#00ff87]/10 transition-all font-semibold text-lg"
+                className="w-full md:w-80 bg-[#111] border border-[#333] text-white rounded-2xl py-4 px-4 focus:outline-none focus:border-white focus:ring-4 focus:ring-white/10 transition-all font-semibold text-lg"
               >
                 <option>4-3-3</option>
                 <option>4-2-3-1</option>
@@ -167,7 +167,7 @@ const Profile = () => {
                 <option>3-4-3</option>
               </select>
             ) : (
-              <div className="bg-gradient-to-r from-[#00ff87]/10 to-[#00ff87]/5 border border-[#00ff87]/30 rounded-2xl py-4 px-6 inline-block">
+              <div className="bg-[#111] border border-[#222] rounded-2xl py-4 px-6 inline-block">
                 <p className="text-white font-black text-2xl">{editData.favoriteFormation}</p>
               </div>
             )}
@@ -179,13 +179,13 @@ const Profile = () => {
               <>
                 <button
                   onClick={handleSaveProfile}
-                  className="flex-1 bg-[#00ff87] hover:bg-[#00e67a] text-black font-black py-4 rounded-2xl transition-all transform active:scale-95"
+                  className="flex-1 bg-white hover:bg-gray-200 text-black font-black py-4 rounded-2xl transition-all transform active:scale-95"
                 >
                   Save Changes
                 </button>
                 <button
                   onClick={() => setIsEditing(false)}
-                  className="flex-1 bg-white/10 hover:bg-white/20 text-white font-black py-4 rounded-2xl transition-all"
+                  className="flex-1 bg-[#222] hover:bg-[#333] text-white font-black py-4 rounded-2xl transition-all"
                 >
                   Cancel
                 </button>

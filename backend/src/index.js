@@ -5,6 +5,7 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import footballRoutes from './routes/footballRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
+import lineupRoutes from './routes/lineupRoutes.js';
 import User from './models/User.js';
 import { seedLineups } from './seeders/lineupSeeder.js';
 
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/football', footballRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/lineup', lineupRoutes);
 
 const PORT = process.env.PORT || 5000;
 
