@@ -18,6 +18,11 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Root route (for health check)
+app.get('/', (req, res) => {
+    res.json({ status: 'success', message: 'Footlive Modular Backend is Running!' });
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/football', footballRoutes);
