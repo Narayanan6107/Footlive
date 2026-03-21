@@ -5,6 +5,10 @@ dotenv.config();
 const API_KEY = process.env.FOOTBALL_DATA_API_KEY;
 const BASE_URL = 'https://api.football-data.org/v4';
 
+if (!API_KEY) {
+    console.error('❌ CRITICAL: FOOTBALL_DATA_API_KEY is missing in environment variables!');
+}
+
 // Cache storage: { key: { data, timestamp } }
 const cache = new Map();
 const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
@@ -46,11 +50,16 @@ export const getCompetitions = async (req, res) => {
         const cacheKey = 'competitions';
         
         const data = await getCachedData(cacheKey, async () => {
-            const response = await fetch(`${BASE_URL}/competitions`, {
+            const url = `${BASE_URL}/competitions`;
+            const response = await fetch(url, {
                 headers: { 'X-Auth-Token': API_KEY }
             });
             
-            if (!response.ok) throw new Error('Failed to fetch competitions');
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error(`❌ API Error [${response.status}] for ${url}:`, errorBody);
+                throw new Error(`Failed to fetch competitions: ${response.status}`);
+            }
             return response.json();
         });
 
@@ -136,7 +145,11 @@ export const getCompetitionMatches = async (req, res) => {
                 headers: { 'X-Auth-Token': API_KEY }
             });
             
-            if (!response.ok) throw new Error('Failed to fetch matches');
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error(`❌ API Error [${response.status}] for ${url}:`, errorBody);
+                throw new Error(`Failed to fetch matches: ${response.status}`);
+            }
             return response.json();
         });
 
@@ -174,7 +187,11 @@ export const getCompetitionTeams = async (req, res) => {
                 headers: { 'X-Auth-Token': API_KEY }
             });
             
-            if (!response.ok) throw new Error('Failed to fetch teams');
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error(`❌ API Error [${response.status}] for ${url}:`, errorBody);
+                throw new Error(`Failed to fetch teams: ${response.status}`);
+            }
             return response.json();
         });
 
@@ -214,7 +231,11 @@ export const getTopScorers = async (req, res) => {
                 headers: { 'X-Auth-Token': API_KEY }
             });
             
-            if (!response.ok) throw new Error('Failed to fetch scorers');
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error(`❌ API Error [${response.status}] for ${url}:`, errorBody);
+                throw new Error(`Failed to fetch scorers: ${response.status}`);
+            }
             return response.json();
         });
 
@@ -242,11 +263,16 @@ export const getMatch = async (req, res) => {
         const cacheKey = `match_${matchId}`;
         
         const data = await getCachedData(cacheKey, async () => {
-            const response = await fetch(`${BASE_URL}/matches/${matchId}`, {
+            const url = `${BASE_URL}/matches/${matchId}`;
+            const response = await fetch(url, {
                 headers: { 'X-Auth-Token': API_KEY }
             });
             
-            if (!response.ok) throw new Error('Failed to fetch match');
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error(`❌ API Error [${response.status}] for ${url}:`, errorBody);
+                throw new Error(`Failed to fetch match: ${response.status}`);
+            }
             return response.json();
         });
 
