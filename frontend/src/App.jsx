@@ -9,6 +9,7 @@ import Standings from './pages/Standings'
 import Tools from './pages/Tools'
 import Lineup from './pages/Lineup'
 import Simulator from './pages/Simulator'
+import TacticalBoard from './pages/TacticalBoard'
 import './App.css'
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
         <Route path="/tools" element={<Tools />} />
         <Route path="/tools/lineup" element={<Lineup />} />
         <Route path="/tools/simulator" element={<Simulator />} />
+        <Route path="/tools/tboard" element={<TacticalBoard />} />
       </Routes>
     </Router>
   )

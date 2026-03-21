@@ -71,6 +71,7 @@ const Tools = () => {
       icon: Layout,
       title: "Tactics Board",
       description: "Design and visualize your tactical masterclass. Drag and drop players to create complex formations.",
+      path: "/tools/tboard"
     },
     {
       icon: Trophy,
