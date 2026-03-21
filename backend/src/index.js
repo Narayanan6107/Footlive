@@ -12,7 +12,10 @@ import { seedLineups } from './seeders/lineupSeeder.js';
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: ["http://localhost:5173", "https://footlive-nara.vercel.app"],
+    credentials: true
+}));
 app.use(express.json());
 
 // Routes

@@ -60,7 +60,7 @@ const MatchList = ({ selectedDate, selectedLeague }) => {
       for (const compId of COMPETITIONS) {
         try {
           const response = await fetch(
-            `http://localhost:5000/api/football/competitions/${compId}/matches?dateFrom=${dateFromStr}&dateTo=${dateToStr}`
+            `${import.meta.env.VITE_API_URL}/api/football/competitions/${compId}/matches?dateFrom=${dateFromStr}&dateTo=${dateToStr}`
           );
           const result = await response.json();
 

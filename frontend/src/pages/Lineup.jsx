@@ -195,7 +195,7 @@ const Lineup = () => {
     useEffect(() => {
         const fetchTeams = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/lineup/teams');
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/lineup/teams`);
                 const data = await res.json();
                 setTeams(data);
                 if (data.length > 0) setSelectedTeam(data[0]._id);
@@ -211,7 +211,7 @@ const Lineup = () => {
         const fetchPlayers = async () => {
             if (!selectedTeam) return;
             try {
-                const res = await fetch(`http://localhost:5000/api/lineup/teams/${selectedTeam}/players`);
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/lineup/teams/${selectedTeam}/players`);
                 const data = await res.json();
                 // Map _id to id to match existing logic if needed
                 const mappedData = data.map(p => ({ ...p, id: p._id }));
