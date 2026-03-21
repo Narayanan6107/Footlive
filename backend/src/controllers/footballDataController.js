@@ -73,7 +73,7 @@ export const getCompetitions = async (req, res) => {
         console.error('Error fetching competitions:', error);
         res.status(500).json({ 
             success: false,
-            message: 'Failed to fetch competitions' 
+            message: error.message || 'Failed to fetch competitions' 
         });
     }
 };
@@ -115,7 +115,7 @@ export const getStandings = async (req, res) => {
         console.error('Error fetching standings:', error);
         res.status(500).json({ 
             success: false,
-            message: 'Failed to fetch standings' 
+            message: error.message || 'Failed to fetch standings' 
         });
     }
 };
@@ -163,7 +163,7 @@ export const getCompetitionMatches = async (req, res) => {
         console.error('Error fetching matches:', error);
         res.status(500).json({ 
             success: false,
-            message: 'Failed to fetch matches' 
+            message: error.message || 'Failed to fetch matches' 
         });
     }
 };
@@ -205,7 +205,7 @@ export const getCompetitionTeams = async (req, res) => {
         console.error('Error fetching teams:', error);
         res.status(500).json({ 
             success: false,
-            message: 'Failed to fetch teams' 
+            message: error.message || 'Failed to fetch teams' 
         });
     }
 };
@@ -249,7 +249,7 @@ export const getTopScorers = async (req, res) => {
         console.error('Error fetching scorers:', error);
         res.status(500).json({ 
             success: false,
-            message: 'Failed to fetch scorers' 
+            message: error.message || 'Failed to fetch scorers' 
         });
     }
 };
@@ -286,7 +286,7 @@ export const getMatch = async (req, res) => {
         console.error('Error fetching match:', error);
         res.status(500).json({ 
             success: false,
-            message: 'Failed to fetch match details' 
+            message: error.message || 'Failed to fetch match details' 
         });
     }
 };
