@@ -8,16 +8,18 @@ const MatchList = ({ selectedDate, selectedLeague }) => {
   const [expandedLeagues, setExpandedLeagues] = useState({});
 
   // Competitions to fetch matches from
-  const COMPETITIONS = ['PL', 'SA', 'PD', 'BL1', 'FL1', 'CL'];
+  const COMPETITIONS = ['WC', 'PL', 'SA', 'PD', 'BL1', 'FL1', 'CL', 'EL'];
 
   // Competition info for display
   const COMP_INFO = {
+    WC: { name: 'FIFA World Cup 2026', country: 'International', color: '#c9a84c' },
     PL: { name: 'Premier League', country: 'England', color: '#3d195b' },
     SA: { name: 'Serie A', country: 'Italy', color: '#003a70' },
     PD: { name: 'La Liga', country: 'Spain', color: '#ee1a3b' },
     BL1: { name: 'Bundesliga', country: 'Germany', color: '#d20515' },
     FL1: { name: 'Ligue 1', country: 'France', color: '#dae025' },
-    CL: { name: 'UEFA Champions League', country: 'Europe', color: '#003399' }
+    CL: { name: 'UEFA Champions League', country: 'Europe', color: '#003399' },
+    EL: { name: 'UEFA Europa League', country: 'Europe', color: '#f47920' }
   };
 
   useEffect(() => {
