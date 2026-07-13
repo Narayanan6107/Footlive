@@ -87,6 +87,13 @@ const Tools = () => {
       comingSoon: true
     },
     {
+      icon: Trophy,
+      title: "Auction Room",
+      description: "Build your dream squad by bidding on real players from the FC26 database. 11 players, limited tokens — can you assemble a winning team?",
+      badge: "New",
+      path: "/tools/auction"
+    },
+    {
       icon: Zap,
       title: "Match Simulator",
       description: "Simulate potential match outcomes based on historical data and user-defined performance metrics.",

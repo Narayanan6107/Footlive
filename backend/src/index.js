@@ -6,6 +6,7 @@ import authRoutes from './routes/authRoutes.js';
 import footballRoutes from './routes/footballRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
 import lineupRoutes from './routes/lineupRoutes.js';
+import auctionRoutes from './routes/auctionRoutes.js';
 import User from './models/User.js';
 import { seedLineups } from './seeders/lineupSeeder.js';
 
@@ -13,7 +14,7 @@ dotenv.config();
 
 const app = express();
 app.use(cors({
-    origin: ["http://localhost:5173", "https://footlive-nara.vercel.app"],
+    origin: ["http://localhost:5173", "http://localhost:5174", "https://footlive-nara.vercel.app"],
     credentials: true
 }));
 app.use(express.json());
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/football', footballRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/lineup', lineupRoutes);
+app.use('/api/auction', auctionRoutes);
 
 const PORT = process.env.PORT || 5000;
 
@@ -60,20 +62,25 @@ const seedUsers = async () => {
 };
 
 const startServer = async () => {
-    await connectDB();
-    
-    // Check for seed flag or auto-seed if empty
-    if (process.argv.includes('--seed')) {
-        await seedUsers();
-        await seedLineups();
-    } else {
-        // Optional: auto-seed logic from original server.js
-        await seedUsers();
-    }
-
+    // Start listening immediately so CSV-only routes (auction) work
+    // even when MongoDB is unavailable
     app.listen(PORT, () => {
         console.log(`🚀 Footlive Modular Server running on port ${PORT}`);
     });
+
+    try {
+        await connectDB();
+
+        // Check for seed flag or auto-seed if empty
+        if (process.argv.includes('--seed')) {
+            await seedUsers();
+            await seedLineups();
+        } else {
+            await seedUsers();
+        }
+    } catch (e) {
+        console.warn('⚠️  MongoDB unavailable — DB-dependent routes disabled. Auction (CSV) routes are still active.');
+    }
 };
 
 startServer();
