@@ -4,7 +4,7 @@ import './Auction.css';
 import {
   Coins, Trophy, CheckCircle, ArrowUpCircle, Wallet,
   SkipForward, RefreshCw, Rocket, Clock, Star, Circle,
-  Shield, Play, Zap
+  Shield, Play, Zap, Users, ChevronRight, LayoutGrid, X
 } from 'lucide-react';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -20,6 +20,249 @@ const PLAYER_COLORS = ['#7c3aed', '#e11d48'];
 const STAT_COLOR   = v => v >= 85 ? '#22c55e' : v >= 75 ? '#84cc16' : v >= 65 ? '#eab308' : v >= 55 ? '#f97316' : '#ef4444';
 const IMAGE_PRELOAD_AHEAD = 8;
 const imageCache = new Set();
+
+// ─── Formation Definitions ───────────────────────────────────────────────────
+const FORMATIONS = [
+  { id: '433',  name: '4-3-3',   positions: [
+    { x:50,y:90,label:'GK' },
+    { x:15,y:72,label:'LB' },{ x:35,y:72,label:'CB' },{ x:65,y:72,label:'CB' },{ x:85,y:72,label:'RB' },
+    { x:30,y:46,label:'CM' },{ x:50,y:41,label:'CM' },{ x:70,y:46,label:'CM' },
+    { x:22,y:18,label:'LW' },{ x:50,y:13,label:'ST' },{ x:78,y:18,label:'RW' },
+  ]},
+  { id: '442',  name: '4-4-2',   positions: [
+    { x:50,y:90,label:'GK' },
+    { x:15,y:72,label:'LB' },{ x:35,y:72,label:'CB' },{ x:65,y:72,label:'CB' },{ x:85,y:72,label:'RB' },
+    { x:15,y:42,label:'LM' },{ x:38,y:42,label:'CM' },{ x:62,y:42,label:'CM' },{ x:85,y:42,label:'RM' },
+    { x:38,y:14,label:'ST' },{ x:62,y:14,label:'ST' },
+  ]},
+  { id: '4231', name: '4-2-3-1', positions: [
+    { x:50,y:90,label:'GK' },
+    { x:15,y:72,label:'LB' },{ x:35,y:72,label:'CB' },{ x:65,y:72,label:'CB' },{ x:85,y:72,label:'RB' },
+    { x:38,y:56,label:'CDM'},{ x:62,y:56,label:'CDM'},
+    { x:22,y:34,label:'LW' },{ x:50,y:30,label:'CAM'},{ x:78,y:34,label:'RW' },
+    { x:50,y:13,label:'ST' },
+  ]},
+  { id: '352',  name: '3-5-2',   positions: [
+    { x:50,y:90,label:'GK' },
+    { x:28,y:72,label:'CB' },{ x:50,y:72,label:'CB' },{ x:72,y:72,label:'CB' },
+    { x:10,y:46,label:'LWB'},{ x:30,y:41,label:'CM' },{ x:50,y:36,label:'CM' },{ x:70,y:41,label:'CM' },{ x:90,y:46,label:'RWB'},
+    { x:38,y:14,label:'ST' },{ x:62,y:14,label:'ST' },
+  ]},
+  { id: '532',  name: '5-3-2',   positions: [
+    { x:50,y:90,label:'GK' },
+    { x:10,y:76,label:'LWB'},{ x:28,y:80,label:'CB' },{ x:50,y:80,label:'CB' },{ x:72,y:80,label:'CB' },{ x:90,y:76,label:'RWB'},
+    { x:30,y:46,label:'CM' },{ x:50,y:41,label:'CM' },{ x:70,y:46,label:'CM' },
+    { x:38,y:14,label:'ST' },{ x:62,y:14,label:'ST' },
+  ]},
+  { id: '4141', name: '4-1-4-1', positions: [
+    { x:50,y:90,label:'GK' },
+    { x:15,y:76,label:'LB' },{ x:35,y:76,label:'CB' },{ x:65,y:76,label:'CB' },{ x:85,y:76,label:'RB' },
+    { x:50,y:60,label:'CDM'},
+    { x:15,y:40,label:'LM' },{ x:35,y:40,label:'CM' },{ x:65,y:40,label:'CM' },{ x:85,y:40,label:'RM' },
+    { x:50,y:13,label:'ST' },
+  ]},
+  { id: '343',  name: '3-4-3',   positions: [
+    { x:50,y:90,label:'GK' },
+    { x:28,y:76,label:'CB' },{ x:50,y:76,label:'CB' },{ x:72,y:76,label:'CB' },
+    { x:15,y:46,label:'LM' },{ x:38,y:46,label:'CM' },{ x:62,y:46,label:'CM' },{ x:85,y:46,label:'RM' },
+    { x:22,y:16,label:'LW' },{ x:50,y:11,label:'ST' },{ x:78,y:16,label:'RW' },
+  ]},
+  { id: '451',  name: '4-5-1',   positions: [
+    { x:50,y:90,label:'GK' },
+    { x:15,y:76,label:'LB' },{ x:35,y:76,label:'CB' },{ x:65,y:76,label:'CB' },{ x:85,y:76,label:'RB' },
+    { x:12,y:44,label:'LM' },{ x:30,y:39,label:'CM' },{ x:50,y:35,label:'CM' },{ x:70,y:39,label:'CM' },{ x:88,y:44,label:'RM' },
+    { x:50,y:13,label:'ST' },
+  ]},
+  { id: '3412', name: '3-4-1-2', positions: [
+    { x:50,y:90,label:'GK' },
+    { x:28,y:76,label:'CB' },{ x:50,y:76,label:'CB' },{ x:72,y:76,label:'CB' },
+    { x:15,y:50,label:'LM' },{ x:38,y:50,label:'CM' },{ x:62,y:50,label:'CM' },{ x:85,y:50,label:'RM' },
+    { x:50,y:30,label:'CAM'},
+    { x:38,y:11,label:'ST' },{ x:62,y:11,label:'ST' },
+  ]},
+  { id: '4312', name: '4-3-1-2', positions: [
+    { x:50,y:90,label:'GK' },
+    { x:15,y:76,label:'LB' },{ x:35,y:76,label:'CB' },{ x:65,y:76,label:'CB' },{ x:85,y:76,label:'RB' },
+    { x:28,y:50,label:'CM' },{ x:50,y:50,label:'CM' },{ x:72,y:50,label:'CM' },
+    { x:50,y:30,label:'CAM'},
+    { x:38,y:11,label:'ST' },{ x:62,y:11,label:'ST' },
+  ]},
+];
+
+// ─── Auto-Formation Helpers ─────────────────────────────────────────────────
+const POS_ROLE = {
+  GK:'GK', CB:'DEF', LB:'DEF', RB:'DEF', LWB:'DEF', RWB:'DEF',
+  CDM:'CDM', CM:'MID', CAM:'MID', LM:'MID', RM:'MID',
+  LW:'ATT', RW:'ATT', ST:'ATT', CF:'ATT',
+};
+const SLOT_PREFS = {
+  GK:  ['GK'],
+  LB:  ['LB','LWB','CB','RB','CM'],
+  CB:  ['CB','LB','RB','CDM','CM'],
+  RB:  ['RB','RWB','CB','LB','CM'],
+  LWB: ['LWB','LB','LM','CB'],
+  RWB: ['RWB','RB','RM','CB'],
+  CDM: ['CDM','CM','CB','CAM'],
+  CM:  ['CM','CDM','CAM','LM','RM','CB'],
+  LM:  ['LM','LWB','LW','CM','CAM'],
+  RM:  ['RM','RWB','RW','CM','CAM'],
+  CAM: ['CAM','CM','LW','RW','ST'],
+  LW:  ['LW','LM','CAM','RW','ST'],
+  RW:  ['RW','RM','CAM','LW','ST'],
+  ST:  ['ST','CF','LW','RW','CAM'],
+  CF:  ['CF','ST','CAM','LW','RW'],
+};
+
+function pickBestFormation(squad) {
+  const squadRoles = {};
+  squad.forEach(p => { const r = POS_ROLE[p.primaryPos] || 'MID'; squadRoles[r] = (squadRoles[r] || 0) + 1; });
+  let best = FORMATIONS[0], bestScore = -Infinity;
+  for (const f of FORMATIONS) {
+    const formRoles = {};
+    f.positions.forEach(pos => { const r = POS_ROLE[pos.label] || 'MID'; formRoles[r] = (formRoles[r] || 0) + 1; });
+    let score = 0;
+    for (const role of ['GK','DEF','CDM','MID','ATT']) score -= Math.abs((formRoles[role]||0)-(squadRoles[role]||0));
+    if (score > bestScore) { bestScore = score; best = f; }
+  }
+  return best;
+}
+
+function autoFillSlots(squad, formation) {
+  const slots = makeSlots(formation);
+  const pool  = [...squad];
+  const ROLE_ORDER = ['GK','DEF','CDM','MID','ATT'];
+  const slotPriority = label => ROLE_ORDER.indexOf(POS_ROLE[label] || 'MID');
+  const sorted = [...slots].sort((a, b) => slotPriority(a.pos.label) - slotPriority(b.pos.label));
+  for (const slot of sorted) {
+    const prefs = SLOT_PREFS[slot.pos.label] || [];
+    let picked = null;
+    for (const pos of prefs) {
+      const idx = pool.findIndex(p => p.primaryPos === pos);
+      if (idx >= 0) { picked = pool.splice(idx, 1)[0]; break; }
+    }
+    if (!picked && pool.length) picked = pool.splice(0, 1)[0];
+    if (picked) slot.player = picked;
+  }
+  return slots;
+}
+
+// ─── Canvas Lineup Download ────────────────────────────────────────────────
+function _rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y); ctx.arcTo(x+w,y, x+w,y+r, r);
+  ctx.lineTo(x + w, y + h - r); ctx.arcTo(x+w,y+h, x+w-r,y+h, r);
+  ctx.lineTo(x + r, y + h); ctx.arcTo(x,y+h, x,y+h-r, r);
+  ctx.lineTo(x, y + r); ctx.arcTo(x,y, x+r,y, r);
+  ctx.closePath();
+}
+function _drawCanvasPitch(ctx, px, py, pw, ph) {
+  // green pitch with stripes
+  const g = ctx.createLinearGradient(px,py,px,py+ph);
+  g.addColorStop(0,'#1a4a2e'); g.addColorStop(0.25,'#1f5733');
+  g.addColorStop(0.5,'#1a4a2e'); g.addColorStop(0.75,'#1f5733'); g.addColorStop(1,'#1a4a2e');
+  ctx.fillStyle = g; _rrect(ctx, px, py, pw, ph, 8); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2;
+  _rrect(ctx, px, py, pw, ph, 8); ctx.stroke();
+  // halfway
+  ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.beginPath(); ctx.moveTo(px+pw*.1,py+ph*.5); ctx.lineTo(px+pw*.9,py+ph*.5); ctx.stroke();
+  // center circle
+  ctx.beginPath(); ctx.arc(px+pw/2,py+ph/2,pw*.1,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(px+pw/2,py+ph/2,2.5,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.fill();
+  // penalty boxes
+  ctx.strokeStyle='rgba(255,255,255,0.4)';
+  ctx.strokeRect(px+pw*.22, py, pw*.56, ph*.18);
+  ctx.strokeRect(px+pw*.22, py+ph*.82, pw*.56, ph*.18);
+  // goals
+  ctx.fillStyle='rgba(255,255,255,0.08)';
+  ctx.fillRect(px+pw*.38, py, pw*.24, ph*.04);
+  ctx.strokeRect(px+pw*.38, py, pw*.24, ph*.04);
+  ctx.fillRect(px+pw*.38, py+ph*.96, pw*.24, ph*.04);
+  ctx.strokeRect(px+pw*.38, py+ph*.96, pw*.24, ph*.04);
+}
+function _drawPlayerToken(ctx, cx, cy, player, color) {
+  const R = 20;
+  // shadow
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=8;
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2);
+  ctx.fillStyle = color; ctx.globalAlpha=0.92; ctx.fill();
+  ctx.restore();
+  // border
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2);
+  ctx.strokeStyle='rgba(255,255,255,0.8)'; ctx.lineWidth=1.8; ctx.stroke();
+  // overall rating
+  const ovr = player?.overall?.toString() || '';
+  ctx.fillStyle='#fff'; ctx.font='bold 11px Arial,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(ovr, cx, cy);
+  // name label
+  const nm = (player?.name||'').split(' ').slice(-1)[0];
+  const nmW = Math.min(ctx.measureText(nm).width + 10, 64);
+  ctx.fillStyle='rgba(0,0,0,0.78)';
+  _rrect(ctx, cx - nmW/2, cy+R+2, nmW, 13, 3); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.font='bold 8px Arial,sans-serif'; ctx.textBaseline='top';
+  ctx.fillText(nm, cx, cy+R+4);
+}
+
+function downloadLineupCanvas(players, lineups) {
+  const CW = 1240, CH = 860;
+  const canvas = document.createElement('canvas');
+  canvas.width = CW; canvas.height = CH;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  const bg = ctx.createLinearGradient(0,0,0,CH);
+  bg.addColorStop(0,'#0d0d1f'); bg.addColorStop(1,'#070710');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,CW,CH);
+
+  // Header
+  ctx.textAlign='center';
+  ctx.fillStyle='#ffd700'; ctx.font='bold 20px Arial,sans-serif';
+  ctx.fillText('\u26BD  Auction Room — Squad Lineups', CW/2, 34);
+
+  // Divider
+  ctx.save(); ctx.setLineDash([6,5]);
+  ctx.strokeStyle='rgba(255,255,255,0.18)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(CW/2,60); ctx.lineTo(CW/2,CH-12); ctx.stroke();
+  ctx.restore();
+
+  const pitchW=540, pitchH=730, pitchY=90;
+
+  for (let i=0; i<2; i++) {
+    const lineup  = lineups?.[i];
+    const pl      = players[i];
+    const color   = PLAYER_COLORS[i];
+    const pitchX  = i===0 ? 25 : CW/2+35;
+
+    // Manager name
+    ctx.fillStyle=color; ctx.font='bold 19px Arial,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(pl.name, pitchX+pitchW/2, pitchY-32);
+    // Formation name
+    if (lineup) {
+      ctx.fillStyle='rgba(255,255,255,0.45)'; ctx.font='13px Arial,sans-serif';
+      ctx.fillText(lineup.formation.name, pitchX+pitchW/2, pitchY-12);
+    }
+    // Draw pitch
+    _drawCanvasPitch(ctx, pitchX, pitchY, pitchW, pitchH);
+
+    // Draw players
+    if (lineup) {
+      lineup.formation.positions.forEach((pos, j) => {
+        const p = lineup.orderedPlayers?.[j];
+        if (!p) return;
+        const cx = pitchX + (pos.x/100)*pitchW;
+        const cy = pitchY  + (pos.y/100)*pitchH;
+        _drawPlayerToken(ctx, cx, cy, p, color);
+      });
+    }
+  }
+
+  const link = document.createElement('a');
+  link.download = 'auction-lineups.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
 
 function fmt(n) { return Number(n).toLocaleString(); }
 
@@ -454,8 +697,286 @@ function SetupScreen({ onStart }) {
   );
 }
 
+// ─── Formation Picker Phase ───────────────────────────────────────────────────
+function makeSlots(formation) {
+  return formation.positions.map((pos, idx) => ({ id: `slot-${idx}`, player: null, pos }));
+}
+
+function FormationPickerPhase({ players, lineupStep, confirmedLineups, onConfirm, onDownload }) {
+  const player       = players[lineupStep];
+  const accentColor  = PLAYER_COLORS[lineupStep];
+  const [formation,  setFormation]  = useState(FORMATIONS[0]);
+  const [slots,      setSlots]      = useState(() => makeSlots(FORMATIONS[0]));
+  const [selected,   setSelected]   = useState(null); // bench player id waiting to be placed
+  const [dragPlayer, setDragPlayer] = useState(null);
+
+  // When the step changes (player 2 takes over), reset
+  useEffect(() => {
+    setFormation(FORMATIONS[0]);
+    setSlots(makeSlots(FORMATIONS[0]));
+    setSelected(null);
+  }, [lineupStep]);
+
+  const changeFormation = (id) => {
+    const f = FORMATIONS.find(f => f.id === id);
+    if (!f) return;
+    setFormation(f);
+    setSlots(makeSlots(f));
+    setSelected(null);
+  };
+
+  const placedIds = new Set(slots.filter(s => s.player).map(s => s.player.id || s.player.name));
+  const bench     = player.squad.filter(p => !placedIds.has(p.id || p.name));
+  const allFilled = slots.every(s => s.player !== null);
+
+  // ── Auto-assign ─────────────────────────────────────────────────────────────
+  const handleAutoAssign = () => {
+    const bestFormation = pickBestFormation(player.squad);
+    setFormation(bestFormation);
+    setSlots(autoFillSlots(player.squad, bestFormation));
+    setSelected(null);
+  };
+
+  // ── Click-to-place ──────────────────────────────────────────────────────────
+  const handleBenchClick = (p) => {
+    setSelected(prev => (prev === (p.id || p.name) ? null : (p.id || p.name)));
+  };
+
+  const handleSlotClick = (slotId) => {
+    // If a bench player is selected, place it
+    if (selected) {
+      const p = player.squad.find(p => (p.id || p.name) === selected);
+      if (!p) return;
+      setSlots(prev => {
+        let next = prev.map(s => s.id === slotId ? { ...s, player: p } : s);
+        return next;
+      });
+      setSelected(null);
+      return;
+    }
+    // If slot is filled and nothing selected — deselect slot (remove player)
+    setSlots(prev => prev.map(s => s.id === slotId ? { ...s, player: null } : s));
+  };
+
+  // ── Drag & Drop ─────────────────────────────────────────────────────────────
+  const handleBenchDragStart = (e, p) => {
+    setDragPlayer({ player: p, fromSlot: null });
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleSlotDragStart = (e, slotId, p) => {
+    setDragPlayer({ player: p, fromSlot: slotId });
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleSlotDrop = (e, targetSlotId) => {
+    e.preventDefault();
+    if (!dragPlayer) return;
+    const { player: p, fromSlot } = dragPlayer;
+    setSlots(prev => {
+      let next = [...prev];
+      const targetIdx = next.findIndex(s => s.id === targetSlotId);
+      const sourceIdx = fromSlot ? next.findIndex(s => s.id === fromSlot) : -1;
+      const displaced = next[targetIdx].player;
+      next[targetIdx] = { ...next[targetIdx], player: p };
+      if (sourceIdx >= 0) next[sourceIdx] = { ...next[sourceIdx], player: displaced };
+      return next;
+    });
+    setDragPlayer(null);
+  };
+
+  const handleClearAll = () => {
+    setSlots(prev => prev.map(s => ({ ...s, player: null })));
+    setSelected(null);
+  };
+
+  const handleConfirmClick = () => {
+    const orderedPlayers = slots.map(s => s.player);
+    onConfirm(lineupStep, formation, orderedPlayers);
+  };
+
+  return (
+    <div className="fp-overlay">
+      <div className="fp-box">
+        {/* ── Step Header */}
+        <div className="fp-step-header">
+          <div className="fp-step-badges">
+            {[0,1].map(i => (
+              <div key={i} className={`fp-step-badge ${i === lineupStep ? 'active' : i < lineupStep ? 'done' : ''}`}
+                style={i === lineupStep ? { '--fp-accent': PLAYER_COLORS[i] } : {}}
+              >
+                <Circle size={10} fill={i <= lineupStep ? PLAYER_COLORS[i] : '#333'} color={i <= lineupStep ? PLAYER_COLORS[i] : '#444'} />
+                <span style={{ color: i === lineupStep ? PLAYER_COLORS[i] : i < lineupStep ? '#666' : '#444' }}>
+                  {players[i].name}
+                </span>
+                {i < lineupStep && <CheckCircle size={12} color="#22c55e" />}
+              </div>
+            ))}
+          </div>
+          <div className="fp-title">
+            <LayoutGrid size={18} color={accentColor} />
+            <span style={{ color: accentColor }}>{player.name}</span>
+            <span>'s Formation</span>
+          </div>
+          <div className="fp-formation-select-wrap">
+            <select
+              className="fp-formation-select"
+              style={{ '--fp-accent': accentColor }}
+              value={formation.id}
+              onChange={e => changeFormation(e.target.value)}
+            >
+              {FORMATIONS.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* ── Main Body: Pitch + Bench */}
+        <div className="fp-body">
+
+          {/* ── Pitch */}
+          <div className="fp-pitch-wrap">
+            <div className="fp-pitch">
+              {/* Pitch markings */}
+              <div className="fp-pitch-line fp-half" />
+              <div className="fp-pitch-circle" />
+              <div className="fp-pitch-dot" />
+              <div className="fp-penalty-box top" />
+              <div className="fp-penalty-box bottom" />
+              <div className="fp-goal top" />
+              <div className="fp-goal bottom" />
+
+              {/* Position slots */}
+              {slots.map((slot) => (
+                <div
+                  key={slot.id}
+                  className={`fp-slot ${slot.player ? 'fp-slot-filled' : 'fp-slot-empty'} ${selected && !slot.player ? 'fp-slot-hinted' : ''}`}
+                  style={{ left: `${slot.pos.x}%`, top: `${slot.pos.y}%` }}
+                  onClick={() => handleSlotClick(slot.id)}
+                  onDragOver={e => e.preventDefault()}
+                  onDrop={e => handleSlotDrop(e, slot.id)}
+                >
+                  {slot.player ? (
+                    <div
+                      className="fp-player-token"
+                      style={{ '--tok-color': accentColor }}
+                      draggable
+                      onDragStart={e => handleSlotDragStart(e, slot.id, slot.player)}
+                    >
+                      <div className="fp-token-photo-wrap">
+                        <img
+                          src={playerImage(slot.player)}
+                          alt={slot.player.name}
+                          className="fp-token-photo"
+                          onError={e => { e.currentTarget.style.display = 'none'; }}
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                      <span className="fp-token-name">
+                        {slot.player.name?.split(' ').slice(-1)[0] || slot.player.name}
+                      </span>
+                      <button
+                        className="fp-token-remove"
+                        onClick={e => { e.stopPropagation(); setSlots(prev => prev.map(s => s.id === slot.id ? { ...s, player: null } : s)); }}
+                      >
+                        <X size={8} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="fp-slot-label">{slot.pos.label}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Slot fill count */}
+            <div className="fp-fill-count" style={{ color: accentColor }}>
+              {slots.filter(s => s.player).length}/11 placed
+            </div>
+          </div>
+
+          {/* ── Bench */}
+          <div className="fp-bench">
+            <div className="fp-bench-header">
+              <Users size={14} />
+              <span>Your Squad</span>
+              <button className="fp-auto-btn" style={{ '--fp-accent': accentColor }} onClick={handleAutoAssign} title="Auto-pick best formation & fill positions">
+                ⚡ Auto
+              </button>
+              <button className="fp-clear-btn" onClick={handleClearAll}>Clear</button>
+            </div>
+            <div className="fp-bench-list">
+              {player.squad.map((p, i) => {
+                const pid = p.id || p.name;
+                const isPlaced   = placedIds.has(pid);
+                const isSelected = selected === pid;
+                return (
+                  <div
+                    key={i}
+                    className={`fp-bench-card ${isPlaced ? 'fp-bench-placed' : ''} ${isSelected ? 'fp-bench-selected' : ''}`}
+                    style={isSelected ? { '--fp-accent': accentColor } : {}}
+                    draggable={!isPlaced}
+                    onDragStart={e => !isPlaced && handleBenchDragStart(e, p)}
+                    onClick={() => !isPlaced && handleBenchClick(p)}
+                  >
+                    <div className="fp-bench-photo-wrap">
+                      <img
+                        src={playerImage(p)}
+                        alt={p.name}
+                        className="fp-bench-photo"
+                        onError={e => { e.currentTarget.style.display = 'none'; }}
+                        referrerPolicy="no-referrer"
+                      />
+                      {isPlaced && <div className="fp-bench-placed-overlay"><CheckCircle size={14} color="#22c55e" /></div>}
+                    </div>
+                    <div className="fp-bench-info">
+                      <div className="fp-bench-name">{p.name}</div>
+                      <div className="fp-bench-meta">
+                        <span style={{ color: TIER_COLOR[p.tier], fontWeight:700 }}>{p.primaryPos}</span>
+                        <span className="fp-bench-ovr">{p.overall}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Footer Actions */}
+        <div className="fp-footer">
+          <p className="fp-hint">
+            {selected
+              ? <><strong>Click a slot</strong> on the pitch to place the selected player   </>
+              : 'Click a bench player then a slot — or drag & drop. Use ⚡ Auto to fill automatically.'}
+          </p>
+          <div className="fp-footer-actions">
+            {lineupStep === 1 && confirmedLineups?.[0] && (
+              <button
+                className="fp-download-btn"
+                title="Download both lineups as an image"
+                onClick={() => onDownload?.(formation, slots)}
+              >
+                ⬇️ Download Lineups
+              </button>
+            )}
+            <button
+              className="fp-confirm-btn"
+              style={{ '--fp-accent': accentColor }}
+              disabled={!allFilled}
+              onClick={handleConfirmClick}
+            >
+              <CheckCircle size={16} style={{ display:'inline', verticalAlign:'middle', marginRight:7 }} />
+              {lineupStep === 0 ? `Confirm ${player.name}'s Lineup →` : 'Start Match Simulation'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Results Modal ────────────────────────────────────────────────────────────
-function ResultsModal({ players, poolExhausted, onPlayAgain, onSimulateMatch }) {
+function ResultsModal({ players, poolExhausted, onPlayAgain, onPickFormation }) {
   const winner   = [...players].sort((a, b) => {
     if (b.squad.length !== a.squad.length) return b.squad.length - a.squad.length;
     return a.spent - b.spent;
@@ -493,9 +1014,11 @@ function ResultsModal({ players, poolExhausted, onPlayAgain, onSimulateMatch }) 
             </div>
           ))}
         </div>
-        <p className="match-sim-question">Do you want to simulate a football match with the players you drafted?</p>
+        <p className="match-sim-question">Pick your formations and simulate the match!</p>
         <div className="modal-action-row">
-          <button className="modal-btn-primary" onClick={onSimulateMatch}><Play size={15} style={{ display:'inline', verticalAlign:'middle', marginRight:6 }} />Simulate Match</button>
+          <button className="modal-btn-primary" onClick={onPickFormation}>
+            <LayoutGrid size={15} style={{ display:'inline', verticalAlign:'middle', marginRight:6 }} />Pick Formations &amp; Simulate
+          </button>
           <button className="modal-btn-secondary" onClick={onPlayAgain}><RefreshCw size={15} style={{ display:'inline', verticalAlign:'middle', marginRight:6 }} />Play Again</button>
         </div>
       </div>
@@ -503,12 +1026,15 @@ function ResultsModal({ players, poolExhausted, onPlayAgain, onSimulateMatch }) 
   );
 }
 
-function buildMatchSimulation(players) {
+function buildMatchSimulation(players, lineups) {
   const [home, away] = players;
-  const formations = [
+  const defaultFormations = [
     { x: 8, y: 50 }, { x: 22, y: 22 }, { x: 22, y: 40 }, { x: 22, y: 60 }, { x: 22, y: 78 },
     { x: 42, y: 28 }, { x: 42, y: 50 }, { x: 42, y: 72 }, { x: 64, y: 25 }, { x: 68, y: 50 }, { x: 64, y: 75 }
   ];
+  const tolandscape = (pos) => ({ x: (100 - pos.y) * 0.9, y: pos.x });
+  const homeFormPts = lineups?.[0]?.formation?.positions?.map(tolandscape) || defaultFormations;
+  const awayFormPts = lineups?.[1]?.formation?.positions?.map(tolandscape) || defaultFormations;
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const pick = items => items[Math.floor(Math.random() * items.length)] || items[0];
   const metric = (team, keys, fallback = 65) => {
@@ -537,17 +1063,22 @@ function buildMatchSimulation(players) {
     const defenders = team.squad.filter(p => ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM'].includes(p.primaryPos));
     return pick(defenders.length ? defenders : team.squad) || { name: team.name, primaryPos: 'DEF' };
   };
-  const sidePlayers = (team, side) => team.squad.slice(0, TOTAL_SLOTS).map((player, i) => {
-    const spot = formations[i] || formations[formations.length - 1];
-    return {
-      id: `${side}-${i}`,
-      team: team.name,
-      player,
-      x: side === 'home' ? spot.x : 100 - spot.x,
-      y: side === 'home' ? spot.y : 100 - spot.y,
-      color: side === 'home' ? PLAYER_COLORS[0] : PLAYER_COLORS[1],
-    };
-  });
+  const sidePlayers = (team, side) => {
+    const pts = side === 'home' ? homeFormPts : awayFormPts;
+    // If lineup ordering provided, use that; otherwise fall back to squad order
+    const orderedSquad = lineups?.[side === 'home' ? 0 : 1]?.orderedPlayers || team.squad;
+    return orderedSquad.slice(0, TOTAL_SLOTS).map((player, i) => {
+      const spot = pts[i] || defaultFormations[i] || defaultFormations[defaultFormations.length - 1];
+      return {
+        id: `${side}-${i}`,
+        team: team.name,
+        player,
+        x: side === 'home' ? spot.x : 100 - spot.x,
+        y: side === 'home' ? spot.y : 100 - spot.y,
+        color: side === 'home' ? PLAYER_COLORS[0] : PLAYER_COLORS[1],
+      };
+    });
+  };
   const homeProfile = profile(home);
   const awayProfile = profile(away);
   const attacks = [5, 9, 14, 18, 23, 29, 34, 39, 44, 49, 54, 59, 64, 70, 75, 80, 85, 89];
@@ -667,7 +1198,7 @@ function buildMatchSimulation(players) {
   };
 }
 
-function MatchSimulationModal({ result, onClose, onReplay }) {
+function MatchSimulationModal({ result, players, lineups, onClose, onReplay }) {
   const [clock, setClock] = useState(0);
   const [running, setRunning] = useState(true);
   const liveEvents = result.events.filter(event => event.minute <= clock);
@@ -771,6 +1302,11 @@ function MatchSimulationModal({ result, onClose, onReplay }) {
         <div className="modal-action-row">
           <button className="modal-btn-primary" onClick={onReplay}><RefreshCw size={15} style={{ display:'inline', verticalAlign:'middle', marginRight:6 }} />Sim Again</button>
           <button className="modal-btn-secondary" onClick={() => setRunning(r => !r)}>{running && !finished ? 'Pause' : 'Resume'}</button>
+          {players && lineups && (
+            <button className="modal-btn-secondary" onClick={() => downloadLineupCanvas(players, lineups)} title="Download both lineups as image">
+              ⬇️ Lineups
+            </button>
+          )}
           <button className="modal-btn-secondary" onClick={onClose}>Back to Results</button>
         </div>
       </div>
@@ -797,6 +1333,9 @@ export default function Auction() {
   const [toast,      setToast]      = useState(null);
   const [poolOut,    setPoolOut]    = useState(false);
   const [matchResult, setMatchResult] = useState(null);
+  // ── Lineup / formation picker state ──────────────────────────────────────
+  const [lineupStep,   setLineupStep]   = useState(0);       // 0 = player 1, 1 = player 2
+  const [lineups,      setLineups]      = useState([null, null]); // confirmed lineups
 
   const timerRef = useRef(null);
   const toastRef = useRef(null);
@@ -966,12 +1505,34 @@ export default function Auction() {
     setPhase('setup'); setPlayers([]); setPool([]);
     setPoolIndex(0);  setFlipped(false); setCurrentBid(null);
     setTimer(TIMER_FULL); setPoolOut(false); setToast(null); setMatchResult(null);
+    setLineupStep(0); setLineups([null, null]);
     soldRef.current = false;
   };
 
+  // ── Enter lineup phase ────────────────────────────────────────────────────
+  const startLineupPhase = useCallback(() => {
+    setLineupStep(0);
+    setLineups([null, null]);
+    setPhase('lineup');
+  }, []);
+
+  // ── Called when a player confirms their formation ─────────────────────────
+  const handleLineupConfirm = useCallback((step, formation, orderedPlayers) => {
+    const updated = [lineups[0], lineups[1]];
+    updated[step] = { formation, orderedPlayers };
+    setLineups(updated);
+    if (step === 0) {
+      setLineupStep(1);
+    } else {
+      // Both confirmed — run simulation
+      setPhase('results');
+      setMatchResult(buildMatchSimulation(players, updated));
+    }
+  }, [lineups, players]);
+
   const simulateMatch = useCallback(() => {
-    setMatchResult(buildMatchSimulation(players));
-  }, [players]);
+    setMatchResult(buildMatchSimulation(players, lineups));
+  }, [players, lineups]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (phase === 'setup') return (
@@ -1053,12 +1614,32 @@ export default function Auction() {
         <PlayerPanel player={players[1]} playerIndex={1} isRight />
       </main>
 
-      {phase === 'results' && (
-        <ResultsModal players={players} poolExhausted={poolOut} onPlayAgain={resetAll} onSimulateMatch={simulateMatch} />
+      {phase === 'results' && !matchResult && (
+        <ResultsModal players={players} poolExhausted={poolOut} onPlayAgain={resetAll} onPickFormation={startLineupPhase} />
+      )}
+
+      {phase === 'lineup' && (
+        <FormationPickerPhase
+          players={players}
+          lineupStep={lineupStep}
+          confirmedLineups={lineups}
+          onConfirm={handleLineupConfirm}
+          onDownload={(curFormation, curSlots) => {
+            const p2 = { formation: curFormation, orderedPlayers: curSlots.map(s => s.player) };
+            downloadLineupCanvas(players, [lineups[0], p2]);
+          }}
+        />
       )}
 
       {matchResult && (
-        <MatchSimulationModal key={matchResult.id} result={matchResult} onClose={() => setMatchResult(null)} onReplay={simulateMatch} />
+        <MatchSimulationModal
+          key={matchResult.id}
+          result={matchResult}
+          players={players}
+          lineups={lineups}
+          onClose={() => { setMatchResult(null); setPhase('results'); }}
+          onReplay={simulateMatch}
+        />
       )}
 
       {toast && <Toast msg={toast.msg} type={toast.type} />}
