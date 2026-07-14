@@ -710,13 +710,6 @@ function FormationPickerPhase({ players, lineupStep, confirmedLineups, onConfirm
   const [selected,   setSelected]   = useState(null); // bench player id waiting to be placed
   const [dragPlayer, setDragPlayer] = useState(null);
 
-  // When the step changes (player 2 takes over), reset
-  useEffect(() => {
-    setFormation(FORMATIONS[0]);
-    setSlots(makeSlots(FORMATIONS[0]));
-    setSelected(null);
-  }, [lineupStep]);
-
   const changeFormation = (id) => {
     const f = FORMATIONS.find(f => f.id === id);
     if (!f) return;
@@ -905,7 +898,7 @@ function FormationPickerPhase({ players, lineupStep, confirmedLineups, onConfirm
               <button className="fp-clear-btn" onClick={handleClearAll}>Clear</button>
             </div>
             <div className="fp-bench-list">
-              {player.squad.map((p, i) => {
+              {bench.map((p, i) => {
                 const pid = p.id || p.name;
                 const isPlaced   = placedIds.has(pid);
                 const isSelected = selected === pid;
@@ -946,7 +939,7 @@ function FormationPickerPhase({ players, lineupStep, confirmedLineups, onConfirm
         <div className="fp-footer">
           <p className="fp-hint">
             {selected
-              ? <><strong>Click a slot</strong> on the pitch to place the selected player   </>
+              ? <><strong>Click a slot</strong> on the pitch to place the selected player</>
               : 'Click a bench player then a slot — or drag & drop. Use ⚡ Auto to fill automatically.'}
           </p>
           <div className="fp-footer-actions">
@@ -1059,6 +1052,10 @@ function buildMatchSimulation(players, lineups) {
     const pool = attackers.length ? attackers : team.squad;
     return pick(pool) || { name: team.name, primaryPos: 'XI' };
   };
+  const passer = team => {
+    const passers = team.squad.filter(p => ['CM', 'CDM', 'CAM', 'LM', 'RM', 'LW', 'RW'].includes(p.primaryPos));
+    return pick(passers.length ? passers : team.squad) || scorer(team);
+  };
   const defender = team => {
     const defenders = team.squad.filter(p => ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM'].includes(p.primaryPos));
     return pick(defenders.length ? defenders : team.squad) || { name: team.name, primaryPos: 'DEF' };
@@ -1069,12 +1066,16 @@ function buildMatchSimulation(players, lineups) {
     const orderedSquad = lineups?.[side === 'home' ? 0 : 1]?.orderedPlayers || team.squad;
     return orderedSquad.slice(0, TOTAL_SLOTS).map((player, i) => {
       const spot = pts[i] || defaultFormations[i] || defaultFormations[defaultFormations.length - 1];
+      const x = side === 'home' ? spot.x : 100 - spot.x;
+      const y = side === 'home' ? spot.y : 100 - spot.y;
       return {
         id: `${side}-${i}`,
         team: team.name,
         player,
-        x: side === 'home' ? spot.x : 100 - spot.x,
-        y: side === 'home' ? spot.y : 100 - spot.y,
+        baseX: x,
+        baseY: y,
+        x,
+        y,
         color: side === 'home' ? PLAYER_COLORS[0] : PLAYER_COLORS[1],
       };
     });
@@ -1095,6 +1096,8 @@ function buildMatchSimulation(players, lineups) {
     const teamProfile = side === 'home' ? homeProfile : awayProfile;
     const opponentProfile = side === 'home' ? awayProfile : homeProfile;
     const runner = scorer(team);
+    const firstPasser = passer(team);
+    const secondPasser = passer(team);
     const marker = defender(opponent);
     const direction = side === 'home' ? 1 : -1;
     const baseX = side === 'home' ? 48 + index * 2.3 : 52 - index * 2.3;
@@ -1113,15 +1116,58 @@ function buildMatchSimulation(players, lineups) {
     const goalChance = clamp(0.08 + attackEdge / 220, 0.005, 0.58);
     const tackleChance = clamp(0.42 - attackEdge / 165, 0.05, 0.86);
 
+    const passerId = `${side}-${Math.max(0, team.squad.indexOf(firstPasser))}`;
+    const secondPasserId = `${side}-${Math.max(0, team.squad.indexOf(secondPasser))}`;
+    const runnerId = `${side}-${Math.max(0, team.squad.indexOf(runner))}`;
+    const markerId = `${side === 'home' ? 'away' : 'home'}-${Math.max(0, opponent.squad.indexOf(marker))}`;
+
+    events.push({
+      type: 'pass',
+      minute: Math.max(0.5, minute - 3.2),
+      side,
+      team: team.name,
+      player: firstPasser,
+      receiver: secondPasser,
+      activeId: passerId,
+      receiverId: secondPasserId,
+      supportIds: [runnerId],
+      pressureIds: [markerId],
+      x: clamp(baseX + direction * 2, 12, 88),
+      y: clamp(lane + (Math.random() * 18 - 9), 14, 86),
+      nextX: clamp(baseX + direction * 9, 12, 88),
+      nextY: lane,
+      text: `${firstPasser.name} zips a clean pass into ${secondPasser.name}`
+    });
+
+    events.push({
+      type: 'pass',
+      minute: Math.max(0.8, minute - 2.2),
+      side,
+      team: team.name,
+      player: secondPasser,
+      receiver: runner,
+      activeId: secondPasserId,
+      receiverId: runnerId,
+      supportIds: [passerId],
+      pressureIds: [markerId],
+      x: clamp(baseX + direction * 9, 12, 88),
+      y: lane,
+      nextX: clamp(baseX + direction * 16, 12, 88),
+      nextY: clamp(lane + (Math.random() * 12 - 6), 14, 86),
+      text: `${secondPasser.name} plays ${runner.name} through the channel`
+    });
+
     events.push({
       type: 'carry',
-      minute: Math.max(1, minute - 2),
+      minute: Math.max(1, minute - 1.1),
       side,
       team: team.name,
       player: runner,
       defender: marker,
-      activeId: `${side}-${Math.max(0, team.squad.indexOf(runner))}`,
-      defenderId: `${side === 'home' ? 'away' : 'home'}-${Math.max(0, opponent.squad.indexOf(marker))}`,
+      activeId: runnerId,
+      defenderId: markerId,
+      supportIds: [passerId, secondPasserId],
+      pressureIds: [markerId],
       x: clamp(baseX + direction * 10, 12, 88),
       y: lane,
       text: `${runner.name} carries through midfield`
@@ -1135,8 +1181,10 @@ function buildMatchSimulation(players, lineups) {
         team: opponent.name,
         player: marker,
         defender: runner,
-        activeId: `${side === 'home' ? 'away' : 'home'}-${Math.max(0, opponent.squad.indexOf(marker))}`,
-        defenderId: `${side}-${Math.max(0, team.squad.indexOf(runner))}`,
+        activeId: markerId,
+        defenderId: runnerId,
+        supportIds: [passerId, secondPasserId],
+        pressureIds: [markerId],
         x: clamp(baseX + direction * 14, 12, 88),
         y: lane + (Math.random() * 14 - 7),
         text: `${marker.name} steps in with a heavy tackle`
@@ -1159,8 +1207,10 @@ function buildMatchSimulation(players, lineups) {
         team: team.name,
         player: runner,
         defender: marker,
-        activeId: `${side}-${Math.max(0, team.squad.indexOf(runner))}`,
-        defenderId: `${side === 'home' ? 'away' : 'home'}-${Math.max(0, opponent.squad.indexOf(marker))}`,
+        activeId: runnerId,
+        defenderId: markerId,
+        supportIds: [passerId, secondPasserId],
+        pressureIds: [markerId],
         x: shotX,
         y: shotY,
         text: scored
@@ -1191,46 +1241,149 @@ function buildMatchSimulation(players, lineups) {
     winner,
     profiles: { home: homeProfile, away: awayProfile },
     players: [...sidePlayers(home, 'home'), ...sidePlayers(away, 'away')],
-    events: events.sort((a, b) => a.minute - b.minute),
+    events: events.sort((a, b) => a.minute - b.minute).map((event, index, sorted) => {
+      if (index > 0 && event.minute <= sorted[index - 1].minute) {
+        return { ...event, minute: sorted[index - 1].minute + 0.5 };
+      }
+      return event;
+    }),
     headline: winner
       ? `${winner.name} win ${homeGoals}-${awayGoals} from the squad ratings`
       : `${home.name} and ${away.name} draw ${homeGoals}-${awayGoals}`,
   };
 }
 
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp01 = v => Math.max(0, Math.min(1, v));
+const clampTo = (v, min, max) => Math.max(min, Math.min(max, v));
+const easeInOutQuad = t => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+const SECONDS_PER_MATCH_MINUTE = 0.35;
+const TRANSITION_WINDOW = 3;
+
 function MatchSimulationModal({ result, players, lineups, onClose, onReplay }) {
   const [clock, setClock] = useState(0);
   const [running, setRunning] = useState(true);
+  const rafRef = useRef(null);
+  const lastTsRef = useRef(null);
+  const finished = clock >= 90;
+
+  useEffect(() => {
+    if (!running || finished) {
+      lastTsRef.current = null;
+      return undefined;
+    }
+    const step = (ts) => {
+      if (lastTsRef.current == null) lastTsRef.current = ts;
+      const deltaSec = (ts - lastTsRef.current) / 1000;
+      lastTsRef.current = ts;
+      setClock(prev => Math.min(90, prev + deltaSec / SECONDS_PER_MATCH_MINUTE));
+      rafRef.current = requestAnimationFrame(step);
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      lastTsRef.current = null;
+    };
+  }, [running, finished]);
+
   const liveEvents = result.events.filter(event => event.minute <= clock);
   const goals = liveEvents.filter(event => event.type === 'goal');
   const homeScore = goals.filter(event => event.side === 'home').length;
   const awayScore = goals.filter(event => event.side === 'away').length;
-  const latest = liveEvents[liveEvents.length - 1];
-  const ball = latest ? { x: latest.x, y: latest.y } : { x: 50, y: 50 };
-  const finished = clock >= 90;
-  const displayedPlayers = result.players.map(dot => {
-    if (latest?.activeId === dot.id) {
-      return { ...dot, x: ball.x, y: ball.y, state: latest.type };
+
+  let prevEvent = result.events[0] || { minute: 0, x: 50, y: 50, type: 'kickoff', side: 'draw' };
+  let nextEvent = prevEvent;
+  for (let i = 0; i < result.events.length; i += 1) {
+    if (result.events[i].minute <= clock) {
+      prevEvent = result.events[i];
+      nextEvent = result.events[i + 1] || result.events[i];
     }
-    if (latest?.defenderId === dot.id) {
+  }
+
+  const span = Math.max(0.001, nextEvent.minute - prevEvent.minute);
+  const rawT = clamp01((clock - prevEvent.minute) / Math.min(span, TRANSITION_WINDOW));
+  const t = easeInOutQuad(rawT);
+  const ball = {
+    x: lerp(prevEvent.nextX ?? prevEvent.x, nextEvent.x, t),
+    y: lerp(prevEvent.nextY ?? prevEvent.y, nextEvent.y, t),
+  };
+  const latest = prevEvent;
+  const justHappened = clock - latest.minute < 1.2;
+  const passLine = (prevEvent.type === 'pass' || nextEvent.type === 'pass') ? {
+    x1: prevEvent.x,
+    y1: prevEvent.y,
+    x2: nextEvent.nextX ?? nextEvent.x,
+    y2: nextEvent.nextY ?? nextEvent.y,
+  } : null;
+
+  const displayedPlayers = result.players.map(dot => {
+    const idleX = Math.cos((clock * 0.45 + dot.baseX) / 4) * 1.15;
+    const idleY = Math.sin((clock * 0.55 + dot.baseX + dot.baseY) / 3) * 1.55;
+    const teamSide = dot.id.startsWith('home') ? 'home' : 'away';
+    const dir = teamSide === 'home' ? 1 : -1;
+    const inPossession = latest.side === teamSide || nextEvent.side === teamSide;
+    const supportActive = latest.supportIds?.includes(dot.id) || nextEvent.supportIds?.includes(dot.id);
+    const pressureActive = latest.pressureIds?.includes(dot.id) || nextEvent.pressureIds?.includes(dot.id);
+
+    if (latest.activeId === dot.id || nextEvent.activeId === dot.id) {
+      const fromX = latest.activeId === dot.id ? latest.x : dot.baseX;
+      const fromY = latest.activeId === dot.id ? latest.y : dot.baseY;
+      const toX = nextEvent.activeId === dot.id ? nextEvent.x : ball.x;
+      const toY = nextEvent.activeId === dot.id ? nextEvent.y : ball.y;
+      return { ...dot, x: lerp(fromX, toX, t), y: lerp(fromY, toY, t), state: latest.type };
+    }
+
+    if (latest.receiverId === dot.id || nextEvent.receiverId === dot.id) {
+      const targetX = nextEvent.nextX ?? nextEvent.x ?? ball.x;
+      const targetY = nextEvent.nextY ?? nextEvent.y ?? ball.y;
       return {
         ...dot,
-        x: Math.max(5, Math.min(95, ball.x + (latest.side === 'home' ? -4 : 4))),
-        y: Math.max(8, Math.min(92, ball.y + 5)),
-        state: 'defending'
+        x: lerp(dot.baseX, clampTo(targetX - dir * 4, 4, 96), 0.55),
+        y: lerp(dot.baseY, clampTo(targetY, 6, 94), 0.55),
+        state: 'receive'
       };
     }
-    const drift = Math.sin((clock + dot.x + dot.y) / 9) * 1.8;
-    return { ...dot, y: Math.max(8, Math.min(92, dot.y + drift)), state: 'shape' };
-  });
 
-  useEffect(() => {
-    if (!running || finished) return undefined;
-    const id = setInterval(() => {
-      setClock(prev => Math.min(90, prev + 1));
-    }, 600);
-    return () => clearInterval(id);
-  }, [running, finished]);
+    if (latest.defenderId === dot.id || nextEvent.defenderId === dot.id) {
+      const markX = clampTo(ball.x + (latest.side === 'home' ? -4 : 4), 5, 95);
+      const markY = clampTo(ball.y + 5, 8, 92);
+      return { ...dot, x: lerp(dot.baseX, markX, 0.35), y: lerp(dot.baseY, markY, 0.35), state: 'defending' };
+    }
+
+    if (supportActive) {
+      return {
+        ...dot,
+        x: clampTo(dot.baseX + dir * 7 + idleX, 3, 97),
+        y: clampTo(dot.baseY + (ball.y > dot.baseY ? 4 : -4), 5, 95),
+        state: 'support'
+      };
+    }
+
+    if (pressureActive || (!inPossession && Math.abs(dot.baseX - ball.x) < 28)) {
+      return {
+        ...dot,
+        x: clampTo(dot.baseX - dir * 5 + idleX * 0.5, 3, 97),
+        y: clampTo(dot.baseY + (ball.y > dot.baseY ? 3 : -3), 5, 95),
+        state: 'pressing'
+      };
+    }
+
+    if (inPossession) {
+      return {
+        ...dot,
+        x: clampTo(dot.baseX + dir * 3 + idleX, 3, 97),
+        y: clampTo(dot.baseY + idleY, 5, 95),
+        state: 'shape'
+      };
+    }
+
+    return {
+      ...dot,
+      x: clampTo(dot.baseX + idleX, 3, 97),
+      y: clampTo(dot.baseY + idleY, 5, 95),
+      state: 'shape'
+    };
+  });
 
   return (
     <div className="modal-overlay">
@@ -1242,7 +1395,7 @@ function MatchSimulationModal({ result, players, lineups, onClose, onReplay }) {
             <span>{result.home.name}</span>
             <strong>{homeScore}</strong>
           </div>
-          <span className="match-vs">{finished ? 'FT' : `${clock}' · 100x`}</span>
+          <span className="match-vs">{finished ? 'FT' : `${Math.floor(clock)}' · smooth`}</span>
           <div>
             <strong>{awayScore}</strong>
             <span>{result.away.name}</span>
@@ -1263,6 +1416,11 @@ function MatchSimulationModal({ result, players, lineups, onClose, onReplay }) {
           <div className="pitch-circle" />
           <div className="pitch-box pitch-box-left" />
           <div className="pitch-box pitch-box-right" />
+          {passLine && (
+            <svg className="pass-line" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <line x1={passLine.x1} y1={passLine.y1} x2={passLine.x2} y2={passLine.y2} />
+            </svg>
+          )}
           {displayedPlayers.map(dot => (
             <div
               key={dot.id}
@@ -1275,14 +1433,15 @@ function MatchSimulationModal({ result, players, lineups, onClose, onReplay }) {
             </div>
           ))}
           <div className="pitch-ball" style={{ left: `${ball.x}%`, top: `${ball.y}%` }} />
-          {latest?.type === 'goal' && <div className="goal-flash" style={{ left: `${latest.x}%`, top: `${latest.y}%` }}>GOAL</div>}
-          {latest?.type === 'tackle' && <div className="action-flash" style={{ left: `${latest.x}%`, top: `${latest.y}%` }}>TACKLE</div>}
-          {latest?.type === 'save' && <div className="action-flash save-flash" style={{ left: `${latest.x}%`, top: `${latest.y}%` }}>BLOCK</div>}
+          {latest?.type === 'goal' && justHappened && <div className="goal-flash" style={{ left: `${latest.x}%`, top: `${latest.y}%` }}>GOAL</div>}
+          {latest?.type === 'pass' && justHappened && <div className="pass-flash" style={{ left: `${latest.x}%`, top: `${latest.y}%` }}>PASS</div>}
+          {latest?.type === 'tackle' && justHappened && <div className="action-flash" style={{ left: `${latest.x}%`, top: `${latest.y}%` }}>TACKLE</div>}
+          {latest?.type === 'save' && justHappened && <div className="action-flash save-flash" style={{ left: `${latest.x}%`, top: `${latest.y}%` }}>BLOCK</div>}
         </div>
         <div className="match-timeline">
           {liveEvents.slice().reverse().map((event, i) => (
             <div key={i} className="match-event">
-              <span className="match-minute">{event.minute}'</span>
+              <span className="match-minute">{Math.round(event.minute)}'</span>
               <div>
                 <strong>{event.team}</strong>
                 <p>{event.text}</p>
@@ -1620,6 +1779,7 @@ export default function Auction() {
 
       {phase === 'lineup' && (
         <FormationPickerPhase
+          key={lineupStep}
           players={players}
           lineupStep={lineupStep}
           confirmedLineups={lineups}
