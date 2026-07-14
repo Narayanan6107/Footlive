@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Navbar from '../components/Navbar';
 import './Auction.css';
 import {
-  Coins, Trophy, Medal, CheckCircle, ArrowUpCircle, Wallet,
+  Coins, Trophy, CheckCircle, ArrowUpCircle, Wallet,
   SkipForward, RefreshCw, Rocket, Clock, Star, Circle,
-  AlertCircle, Shield
+  Shield, Play, Zap
 } from 'lucide-react';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -18,8 +18,59 @@ const BACKEND         = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const TIER_COLOR   = { GK: '#f59e0b', DEF: '#3b82f6', MID: '#22c55e', ATT: '#ef4444' };
 const PLAYER_COLORS = ['#7c3aed', '#e11d48'];
 const STAT_COLOR   = v => v >= 85 ? '#22c55e' : v >= 75 ? '#84cc16' : v >= 65 ? '#eab308' : v >= 55 ? '#f97316' : '#ef4444';
+const IMAGE_PRELOAD_AHEAD = 8;
+const imageCache = new Set();
 
 function fmt(n) { return Number(n).toLocaleString(); }
+
+function seededRand(seed) {
+  const x = Math.sin(seed * 999) * 10000;
+  return x - Math.floor(x);
+}
+
+function preloadImage(url) {
+  if (!url || imageCache.has(url)) return;
+  imageCache.add(url);
+  const img = new Image();
+  img.decoding = 'async';
+  img.src = url;
+}
+
+function assetUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('/')) return `${BACKEND}${url}`;
+  return url;
+}
+
+function playerImage(player) {
+  return assetUrl(player?.faceImageUrl || player?.faceUrl);
+}
+
+function initials(text = '') {
+  return text
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0])
+    .join('')
+    .toUpperCase() || 'FC';
+}
+
+function BadgeImage({ src, alt, className, fallback }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) return <span className={`${className} badge-fallback`}>{fallback}</span>;
+  return (
+    <img
+      src={assetUrl(src)}
+      alt={alt}
+      className={className}
+      loading="eager"
+      decoding="async"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 // ─── Confetti ────────────────────────────────────────────────────────────────
 const C_COLORS = ['#f59e0b','#7c3aed','#22c55e','#3b82f6','#ef4444','#ffd700','#a78bfa','#fb7185'];
@@ -27,13 +78,13 @@ function Confetti() {
   const pieces = Array.from({ length: 70 }, (_, i) => ({
     id: i,
     style: {
-      left: `${Math.random() * 100}%`,
+      left: `${seededRand(i + 1) * 100}%`,
       background: C_COLORS[i % C_COLORS.length],
-      width: `${6 + Math.random() * 8}px`,
-      height: `${6 + Math.random() * 8}px`,
-      borderRadius: Math.random() > 0.5 ? '50%' : '3px',
-      animationDuration: `${1.5 + Math.random() * 2}s`,
-      animationDelay: `${Math.random() * 0.8}s`,
+      width: `${6 + seededRand(i + 2) * 8}px`,
+      height: `${6 + seededRand(i + 3) * 8}px`,
+      borderRadius: seededRand(i + 4) > 0.5 ? '50%' : '3px',
+      animationDuration: `${1.5 + seededRand(i + 5) * 2}s`,
+      animationDelay: `${seededRand(i + 6) * 0.8}s`,
     }
   }));
   return <div className="confetti-container">{pieces.map(p => <div key={p.id} className="confetti-piece" style={p.style} />)}</div>;
@@ -63,6 +114,8 @@ function TimerRing({ seconds }) {
 // ─── Player Card ─────────────────────────────────────────────────────────────
 function PlayerCard({ player, flipped }) {
   const color = TIER_COLOR[player?.tier] || '#a78bfa';
+  const [loadedPhotoId, setLoadedPhotoId] = useState(null);
+  const photoReady = loadedPhotoId === player?.id;
   const stats = player ? [
     { label: 'PAC', val: player.pace },
     { label: 'SHO', val: player.shooting },
@@ -93,25 +146,35 @@ function PlayerCard({ player, flipped }) {
               <div className="card-pos-text">{player?.primaryPos}</div>
               <div className="card-left-icons">
                 <div className="card-left-icon-img">
-                  <img
-                    src={`https://flagcdn.com/28x21/${(player?.nationality || '').toLowerCase().slice(0,2)}.png`}
+                  <BadgeImage
+                    src={player?.flagUrl}
                     alt={player?.nationality}
                     className="card-flag"
-                    onError={e => { e.currentTarget.style.display='none'; }}
+                    fallback={player?.countryCode?.toUpperCase() || initials(player?.nationality)}
                   />
                 </div>
-                <div className="card-left-icon-img card-club-placeholder">
-                  <Trophy size={13} color={color} />
+                <div className="card-left-icon-img card-club-icon">
+                  <BadgeImage
+                    src={player?.clubLogoUrl}
+                    alt={player?.club}
+                    className="card-club-logo"
+                    fallback={initials(player?.club)}
+                  />
                 </div>
               </div>
             </div>
             <div className="card-photo-wrap">
+              {!photoReady && <div className="card-photo-skeleton">{initials(player?.name)}</div>}
               <img
-                src={player?.faceUrl}
+                src={playerImage(player)}
                 alt={player?.name}
                 className="card-photo"
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
                 referrerPolicy="no-referrer"
-                onError={e => { e.currentTarget.style.display = 'none'; }}
+                onLoad={() => setLoadedPhotoId(player?.id)}
+                onError={e => { setLoadedPhotoId(player?.id); e.currentTarget.style.display = 'none'; }}
               />
               <div className="card-photo-gradient" />
             </div>
@@ -147,7 +210,7 @@ function SquadMiniCard({ player }) {
   return (
     <div className="squad-player-mini" style={{ borderColor: `${color}22` }}>
       <img
-        src={player.faceUrl}
+        src={playerImage(player)}
         alt={player.name}
         className="squad-mini-photo"
         referrerPolicy="no-referrer"
@@ -158,6 +221,10 @@ function SquadMiniCard({ player }) {
         <div className="squad-mini-sub">
           <span style={{ color, fontWeight: 700 }}>{player.primaryPos}</span>
           <span>·</span><span>{player.club}</span>
+        </div>
+        <div className="squad-mini-badges">
+          <BadgeImage src={player.flagUrl} alt={player.nationality} className="squad-mini-flag" fallback={player.countryCode?.toUpperCase() || initials(player.nationality)} />
+          <BadgeImage src={player.clubLogoUrl} alt={player.club} className="squad-mini-club" fallback={initials(player.club)} />
         </div>
       </div>
       <div className="squad-mini-overall">{player.overall}</div>
@@ -211,6 +278,7 @@ const QUICK_ADDS = [5_000, 10_000, 25_000, 50_000, 100_000];
 function PlayerBidBox({ player, idx, minAmount, isLeading, onBid, disabled }) {
   const color = PLAYER_COLORS[idx];
   const [amount, setAmount] = React.useState(minAmount);
+  const squadFull = player.squad.length >= TOTAL_SLOTS;
 
   // Reset to minimum whenever the player card changes (minAmount prop changes)
   React.useEffect(() => { setAmount(minAmount); }, [minAmount]);
@@ -231,6 +299,7 @@ function PlayerBidBox({ player, idx, minAmount, isLeading, onBid, disabled }) {
   return (
     <div className="player-bid-box" style={{ '--pbx-color': color }}>
       <div className="pbx-name" style={{ color }}>{player.name}</div>
+      {squadFull && <div className="pbx-full-note">Squad complete</div>}
 
       {/* Amount input */}
       <div className="pbx-input-row">
@@ -244,6 +313,7 @@ function PlayerBidBox({ player, idx, minAmount, isLeading, onBid, disabled }) {
           min={minAmount}
           max={player.wallet}
           step={1000}
+          disabled={squadFull}
           onChange={e => {
             const v = Number(e.target.value) || minAmount;
             setAmount(Math.max(minAmount, Math.min(player.wallet, v)));
@@ -306,7 +376,7 @@ function BidControls({ currentPlayer, currentBid, players, onBid, onSkip, onConf
               minAmount={isLeading ? currentBid.amount : minAmt}
               isLeading={isLeading}
               onBid={onBid}
-              disabled={disabled}
+              disabled={disabled || pl.squad.length >= TOTAL_SLOTS}
             />
           );
         })}
@@ -385,7 +455,7 @@ function SetupScreen({ onStart }) {
 }
 
 // ─── Results Modal ────────────────────────────────────────────────────────────
-function ResultsModal({ players, poolExhausted, onPlayAgain }) {
+function ResultsModal({ players, poolExhausted, onPlayAgain, onSimulateMatch }) {
   const winner   = [...players].sort((a, b) => {
     if (b.squad.length !== a.squad.length) return b.squad.length - a.squad.length;
     return a.spent - b.spent;
@@ -423,7 +493,286 @@ function ResultsModal({ players, poolExhausted, onPlayAgain }) {
             </div>
           ))}
         </div>
-        <button className="modal-btn-primary" onClick={onPlayAgain}><RefreshCw size={15} style={{ display:'inline', verticalAlign:'middle', marginRight:6 }} />Play Again</button>
+        <p className="match-sim-question">Do you want to simulate a football match with the players you drafted?</p>
+        <div className="modal-action-row">
+          <button className="modal-btn-primary" onClick={onSimulateMatch}><Play size={15} style={{ display:'inline', verticalAlign:'middle', marginRight:6 }} />Simulate Match</button>
+          <button className="modal-btn-secondary" onClick={onPlayAgain}><RefreshCw size={15} style={{ display:'inline', verticalAlign:'middle', marginRight:6 }} />Play Again</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function buildMatchSimulation(players) {
+  const [home, away] = players;
+  const formations = [
+    { x: 8, y: 50 }, { x: 22, y: 22 }, { x: 22, y: 40 }, { x: 22, y: 60 }, { x: 22, y: 78 },
+    { x: 42, y: 28 }, { x: 42, y: 50 }, { x: 42, y: 72 }, { x: 64, y: 25 }, { x: 68, y: 50 }, { x: 64, y: 75 }
+  ];
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  const pick = items => items[Math.floor(Math.random() * items.length)] || items[0];
+  const metric = (team, keys, fallback = 65) => {
+    if (!team.squad.length) return fallback;
+    return team.squad.reduce((sum, p) => sum + keys.reduce((s, key) => s + (p[key] || fallback), 0) / keys.length, 0) / team.squad.length;
+  };
+  const profile = team => {
+    const count = team.squad.length;
+    const avg = metric(team, ['overall'], 65);
+    const attack = metric(team, ['shooting', 'dribbling', 'pace'], 62);
+    const midfield = metric(team, ['passing', 'dribbling', 'physic'], 62);
+    const defense = metric(team, ['defending', 'physic'], 60);
+    const keeper = metric({ squad: team.squad.filter(p => p.primaryPos === 'GK') }, ['overall'], Math.max(58, defense - 4));
+    const completeness = Math.min(1, count / TOTAL_SLOTS);
+    const missingPenalty = (TOTAL_SLOTS - count) * 10;
+    const chemistry = completeness * 18;
+    const power = avg * 0.38 + attack * 0.18 + midfield * 0.18 + defense * 0.16 + keeper * 0.1 + chemistry - missingPenalty;
+    return { count, avg, attack, midfield, defense, keeper, completeness, power };
+  };
+  const scorer = team => {
+    const attackers = team.squad.filter(p => ['ST', 'CF', 'LW', 'RW', 'CAM'].includes(p.primaryPos));
+    const pool = attackers.length ? attackers : team.squad;
+    return pick(pool) || { name: team.name, primaryPos: 'XI' };
+  };
+  const defender = team => {
+    const defenders = team.squad.filter(p => ['GK', 'CB', 'LB', 'RB', 'LWB', 'RWB', 'CDM'].includes(p.primaryPos));
+    return pick(defenders.length ? defenders : team.squad) || { name: team.name, primaryPos: 'DEF' };
+  };
+  const sidePlayers = (team, side) => team.squad.slice(0, TOTAL_SLOTS).map((player, i) => {
+    const spot = formations[i] || formations[formations.length - 1];
+    return {
+      id: `${side}-${i}`,
+      team: team.name,
+      player,
+      x: side === 'home' ? spot.x : 100 - spot.x,
+      y: side === 'home' ? spot.y : 100 - spot.y,
+      color: side === 'home' ? PLAYER_COLORS[0] : PLAYER_COLORS[1],
+    };
+  });
+  const homeProfile = profile(home);
+  const awayProfile = profile(away);
+  const attacks = [5, 9, 14, 18, 23, 29, 34, 39, 44, 49, 54, 59, 64, 70, 75, 80, 85, 89];
+  const events = [];
+  let homeGoals = 0;
+  let awayGoals = 0;
+
+  attacks.forEach((minute, index) => {
+    const totalPower = Math.max(1, homeProfile.power + awayProfile.power);
+    const homePossessionChance = clamp(0.5 + (homeProfile.power - awayProfile.power) / (totalPower * 2.1), 0.08, 0.92);
+    const side = Math.random() < homePossessionChance ? 'home' : 'away';
+    const team = side === 'home' ? home : away;
+    const opponent = side === 'home' ? away : home;
+    const teamProfile = side === 'home' ? homeProfile : awayProfile;
+    const opponentProfile = side === 'home' ? awayProfile : homeProfile;
+    const runner = scorer(team);
+    const marker = defender(opponent);
+    const direction = side === 'home' ? 1 : -1;
+    const baseX = side === 'home' ? 48 + index * 2.3 : 52 - index * 2.3;
+    const lane = 22 + Math.random() * 56;
+    const playerMismatch = teamProfile.count - opponentProfile.count;
+    const attackEdge =
+      teamProfile.attack * 0.38 +
+      teamProfile.midfield * 0.28 +
+      runner.overall * 0.18 +
+      teamProfile.completeness * 24 -
+      opponentProfile.defense * 0.28 -
+      opponentProfile.keeper * 0.18 -
+      opponentProfile.completeness * 16 +
+      playerMismatch * 8;
+    const shotChance = clamp(0.3 + attackEdge / 150, 0.02, 0.9);
+    const goalChance = clamp(0.08 + attackEdge / 220, 0.005, 0.58);
+    const tackleChance = clamp(0.42 - attackEdge / 165, 0.05, 0.86);
+
+    events.push({
+      type: 'carry',
+      minute: Math.max(1, minute - 2),
+      side,
+      team: team.name,
+      player: runner,
+      defender: marker,
+      activeId: `${side}-${Math.max(0, team.squad.indexOf(runner))}`,
+      defenderId: `${side === 'home' ? 'away' : 'home'}-${Math.max(0, opponent.squad.indexOf(marker))}`,
+      x: clamp(baseX + direction * 10, 12, 88),
+      y: lane,
+      text: `${runner.name} carries through midfield`
+    });
+
+    if (Math.random() < tackleChance) {
+      events.push({
+        type: 'tackle',
+        minute,
+        side: side === 'home' ? 'away' : 'home',
+        team: opponent.name,
+        player: marker,
+        defender: runner,
+        activeId: `${side === 'home' ? 'away' : 'home'}-${Math.max(0, opponent.squad.indexOf(marker))}`,
+        defenderId: `${side}-${Math.max(0, team.squad.indexOf(runner))}`,
+        x: clamp(baseX + direction * 14, 12, 88),
+        y: lane + (Math.random() * 14 - 7),
+        text: `${marker.name} steps in with a heavy tackle`
+      });
+      return;
+    }
+
+    if (Math.random() < shotChance) {
+      const shotX = side === 'home' ? 84 : 16;
+      const shotY = 28 + Math.random() * 44;
+      const scored = Math.random() < goalChance;
+      if (scored) {
+        if (side === 'home') homeGoals += 1;
+        else awayGoals += 1;
+      }
+      events.push({
+        type: scored ? 'goal' : 'save',
+        minute: minute + 1,
+        side,
+        team: team.name,
+        player: runner,
+        defender: marker,
+        activeId: `${side}-${Math.max(0, team.squad.indexOf(runner))}`,
+        defenderId: `${side === 'home' ? 'away' : 'home'}-${Math.max(0, opponent.squad.indexOf(marker))}`,
+        x: shotX,
+        y: shotY,
+        text: scored
+          ? `${runner.name} scores after beating ${marker.name}`
+          : `${runner.name} shoots, but ${marker.name} blocks the angle`
+      });
+    }
+  });
+
+  const winner = homeGoals === awayGoals ? null : homeGoals > awayGoals ? home : away;
+  events.push({
+    type: 'final',
+    minute: 90,
+    side: winner === home ? 'home' : winner === away ? 'away' : 'draw',
+    team: winner?.name || 'Full Time',
+    player: winner ? scorer(winner) : null,
+    x: 50,
+    y: 50,
+    text: winner ? `${winner.name} protect the result at full time` : 'The match ends level after an honest rating-based simulation'
+  });
+
+  return {
+    id: `${Date.now()}-${Math.random()}`,
+    home,
+    away,
+    homeGoals,
+    awayGoals,
+    winner,
+    profiles: { home: homeProfile, away: awayProfile },
+    players: [...sidePlayers(home, 'home'), ...sidePlayers(away, 'away')],
+    events: events.sort((a, b) => a.minute - b.minute),
+    headline: winner
+      ? `${winner.name} win ${homeGoals}-${awayGoals} from the squad ratings`
+      : `${home.name} and ${away.name} draw ${homeGoals}-${awayGoals}`,
+  };
+}
+
+function MatchSimulationModal({ result, onClose, onReplay }) {
+  const [clock, setClock] = useState(0);
+  const [running, setRunning] = useState(true);
+  const liveEvents = result.events.filter(event => event.minute <= clock);
+  const goals = liveEvents.filter(event => event.type === 'goal');
+  const homeScore = goals.filter(event => event.side === 'home').length;
+  const awayScore = goals.filter(event => event.side === 'away').length;
+  const latest = liveEvents[liveEvents.length - 1];
+  const ball = latest ? { x: latest.x, y: latest.y } : { x: 50, y: 50 };
+  const finished = clock >= 90;
+  const displayedPlayers = result.players.map(dot => {
+    if (latest?.activeId === dot.id) {
+      return { ...dot, x: ball.x, y: ball.y, state: latest.type };
+    }
+    if (latest?.defenderId === dot.id) {
+      return {
+        ...dot,
+        x: Math.max(5, Math.min(95, ball.x + (latest.side === 'home' ? -4 : 4))),
+        y: Math.max(8, Math.min(92, ball.y + 5)),
+        state: 'defending'
+      };
+    }
+    const drift = Math.sin((clock + dot.x + dot.y) / 9) * 1.8;
+    return { ...dot, y: Math.max(8, Math.min(92, dot.y + drift)), state: 'shape' };
+  });
+
+  useEffect(() => {
+    if (!running || finished) return undefined;
+    const id = setInterval(() => {
+      setClock(prev => Math.min(90, prev + 1));
+    }, 600);
+    return () => clearInterval(id);
+  }, [running, finished]);
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-box match-modal">
+        <span className="modal-emoji"><Zap size={48} strokeWidth={1.5} /></span>
+        <h2 className="modal-title" style={{ color: '#ffd700' }}>{finished ? result.headline : 'Live Auction XI Match'}</h2>
+        <div className="match-scoreboard">
+          <div>
+            <span>{result.home.name}</span>
+            <strong>{homeScore}</strong>
+          </div>
+          <span className="match-vs">{finished ? 'FT' : `${clock}' · 100x`}</span>
+          <div>
+            <strong>{awayScore}</strong>
+            <span>{result.away.name}</span>
+          </div>
+        </div>
+        <div className="match-engine-strip">
+          <div>
+            <strong>{result.profiles.home.count}/11</strong>
+            <span>OVR {Math.round(result.profiles.home.avg)} · ATK {Math.round(result.profiles.home.attack)} · DEF {Math.round(result.profiles.home.defense)}</span>
+          </div>
+          <div>
+            <strong>{result.profiles.away.count}/11</strong>
+            <span>OVR {Math.round(result.profiles.away.avg)} · ATK {Math.round(result.profiles.away.attack)} · DEF {Math.round(result.profiles.away.defense)}</span>
+          </div>
+        </div>
+        <div className="live-pitch">
+          <div className="pitch-line pitch-half" />
+          <div className="pitch-circle" />
+          <div className="pitch-box pitch-box-left" />
+          <div className="pitch-box pitch-box-right" />
+          {displayedPlayers.map(dot => (
+            <div
+              key={dot.id}
+              className={`pitch-player pitch-player-${dot.state}`}
+              style={{ left: `${dot.x}%`, top: `${dot.y}%`, '--player-color': dot.color }}
+              title={dot.player.name}
+            >
+              <img src={playerImage(dot.player)} alt="" />
+              <span>{dot.player.primaryPos}</span>
+            </div>
+          ))}
+          <div className="pitch-ball" style={{ left: `${ball.x}%`, top: `${ball.y}%` }} />
+          {latest?.type === 'goal' && <div className="goal-flash" style={{ left: `${latest.x}%`, top: `${latest.y}%` }}>GOAL</div>}
+          {latest?.type === 'tackle' && <div className="action-flash" style={{ left: `${latest.x}%`, top: `${latest.y}%` }}>TACKLE</div>}
+          {latest?.type === 'save' && <div className="action-flash save-flash" style={{ left: `${latest.x}%`, top: `${latest.y}%` }}>BLOCK</div>}
+        </div>
+        <div className="match-timeline">
+          {liveEvents.slice().reverse().map((event, i) => (
+            <div key={i} className="match-event">
+              <span className="match-minute">{event.minute}'</span>
+              <div>
+                <strong>{event.team}</strong>
+                <p>{event.text}</p>
+              </div>
+            </div>
+          ))}
+          {!liveEvents.length && (
+            <div className="match-event">
+              <span className="match-minute">0'</span>
+              <div>
+                <strong>Kickoff</strong>
+                <p>The drafted elevens are flying around the pitch at 100x speed.</p>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="modal-action-row">
+          <button className="modal-btn-primary" onClick={onReplay}><RefreshCw size={15} style={{ display:'inline', verticalAlign:'middle', marginRight:6 }} />Sim Again</button>
+          <button className="modal-btn-secondary" onClick={() => setRunning(r => !r)}>{running && !finished ? 'Pause' : 'Resume'}</button>
+          <button className="modal-btn-secondary" onClick={onClose}>Back to Results</button>
+        </div>
       </div>
     </div>
   );
@@ -447,6 +796,7 @@ export default function Auction() {
   const [error,      setError]      = useState(null);
   const [toast,      setToast]      = useState(null);
   const [poolOut,    setPoolOut]    = useState(false);
+  const [matchResult, setMatchResult] = useState(null);
 
   const timerRef = useRef(null);
   const toastRef = useRef(null);
@@ -501,8 +851,18 @@ export default function Auction() {
   const startAuction = useCallback((names) => {
     setPlayers(names.map(name => ({ name, wallet: STARTING_BUDGET, squad: [], spent: 0 })));
     setPhase('auction');
+    setMatchResult(null);
     fetchPool();
   }, [fetchPool]);
+
+  useEffect(() => {
+    if (!pool.length) return;
+    pool.slice(poolIndex, poolIndex + IMAGE_PRELOAD_AHEAD).forEach(player => {
+      preloadImage(playerImage(player));
+      preloadImage(player.flagUrl);
+      preloadImage(player.clubLogoUrl);
+    });
+  }, [pool, poolIndex]);
 
   // ── Reveal new card (runs on each new poolIndex) ───────────────────────────
   useEffect(() => {
@@ -513,7 +873,7 @@ export default function Auction() {
     setTimer(TIMER_FULL);
     const t = setTimeout(() => setFlipped(true), 350);
     return () => clearTimeout(t);
-  }, [phase, loading, poolIndex]);
+  }, [phase, loading, poolIndex, pool.length]);
 
   // ── 15s countdown — only runs BEFORE a bid; stops automatically when
   //    currentBid becomes non-null (effect won't re-run because flipped/
@@ -544,6 +904,7 @@ export default function Auction() {
     if (currentBid && currentBid.playerIndex === playerIndex) return;
 
     const pl = players[playerIndex];
+    if (pl.squad.length >= TOTAL_SLOTS) { showToast(`${pl.name}'s squad is already complete`, 'info'); return; }
     if (pl.wallet < amount) { showToast('Not enough tokens!', 'error'); return; }
 
     // Only stop the 15s interval on the FIRST bid
@@ -582,7 +943,7 @@ export default function Auction() {
       const winner = next[playerIndex];
       showToast(`${winner.name} signed ${snapshot.name}!`, 'success', 2500);
 
-      if (winner.squad.length >= TOTAL_SLOTS) {
+      if (next.every(p => p.squad.length >= TOTAL_SLOTS)) {
         setTimeout(() => setPhase('results'), 700);
       } else {
         setTimeout(() => advancePlayer(), 500);
@@ -604,9 +965,13 @@ export default function Auction() {
     clearInterval(timerRef.current);
     setPhase('setup'); setPlayers([]); setPool([]);
     setPoolIndex(0);  setFlipped(false); setCurrentBid(null);
-    setTimer(TIMER_FULL); setPoolOut(false); setToast(null);
+    setTimer(TIMER_FULL); setPoolOut(false); setToast(null); setMatchResult(null);
     soldRef.current = false;
   };
+
+  const simulateMatch = useCallback(() => {
+    setMatchResult(buildMatchSimulation(players));
+  }, [players]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (phase === 'setup') return (
@@ -689,7 +1054,11 @@ export default function Auction() {
       </main>
 
       {phase === 'results' && (
-        <ResultsModal players={players} poolExhausted={poolOut} onPlayAgain={resetAll} />
+        <ResultsModal players={players} poolExhausted={poolOut} onPlayAgain={resetAll} onSimulateMatch={simulateMatch} />
+      )}
+
+      {matchResult && (
+        <MatchSimulationModal key={matchResult.id} result={matchResult} onClose={() => setMatchResult(null)} onReplay={simulateMatch} />
       )}
 
       {toast && <Toast msg={toast.msg} type={toast.type} />}

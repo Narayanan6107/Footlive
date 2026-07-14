@@ -1,0 +1,4 @@
+backend/server.log
+backend/server.err.log
+frontend/vite.log
+frontend/vite.err.log
