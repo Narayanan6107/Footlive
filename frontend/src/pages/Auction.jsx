@@ -8,10 +8,10 @@ import {
 } from 'lucide-react';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const STARTING_BUDGET = 1_500_000;  // enough for 11 players rated 80-95
-const TIMER_FULL      = 15;          // seconds before first bid
+const STARTING_BUDGET = 10_000_000;  // 10M tokens per manager
+const TIMER_FULL      = 30;          // seconds before first bid
 const BID_INCREMENT   = 5_000;       // minimum outbid step
-const POOL_SIZE       = 50;
+const POOL_SIZE       = 150;         // large pool — auction runs until both have 11
 const TOTAL_SLOTS     = 11;
 const BACKEND         = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -92,19 +92,19 @@ function Confetti() {
 
 // ─── Timer Ring ─────────────────────────────────────────────────────────────
 function TimerRing({ seconds }) {
-  const r = 26, circ = 2 * Math.PI * r;
+  const r = 18, circ = 2 * Math.PI * r;
   const ratio  = seconds / TIMER_FULL;
   const offset = circ * (1 - ratio);
   const color  = ratio > 0.5 ? '#a78bfa' : ratio > 0.25 ? '#f59e0b' : '#ef4444';
   return (
     <div className="timer-wrap">
-      <svg width="68" height="68" className="timer-ring-svg">
-        <circle className="timer-ring-bg" cx="34" cy="34" r={r} strokeWidth="4" />
-        <circle className="timer-ring-fg" cx="34" cy="34" r={r} strokeWidth="4"
+      <svg width="46" height="46" className="timer-ring-svg">
+        <circle className="timer-ring-bg" cx="23" cy="23" r={r} strokeWidth="3" />
+        <circle className="timer-ring-fg" cx="23" cy="23" r={r} strokeWidth="3"
           stroke={color} strokeDasharray={circ} strokeDashoffset={offset} />
-        <text x="34" y="34" textAnchor="middle" dominantBaseline="central"
-          fill="#fff" fontSize="15" fontWeight="800" fontFamily="Outfit,sans-serif"
-          transform="rotate(90 34 34)">{seconds}</text>
+        <text x="23" y="23" textAnchor="middle" dominantBaseline="central"
+          fill="#fff" fontSize="11" fontWeight="800" fontFamily="Outfit,sans-serif"
+          transform="rotate(90 23 23)">{seconds}</text>
       </svg>
       <span className="timer-label">seconds left</span>
     </div>
@@ -434,12 +434,12 @@ function SetupScreen({ onStart }) {
           ))}
         </div>
         <div className="setup-rules">
-          <div className="setup-rule"><Coins size={14} style={{ display:'inline', verticalAlign:'middle', marginRight:6 }} /><strong>1,500,000 tokens</strong> each to spend</div>
+          <div className="setup-rule"><Coins size={14} style={{ display:'inline', verticalAlign:'middle', marginRight:6 }} /><strong>10,000,000 tokens</strong> each to spend</div>
           <div className="setup-rule"><Star size={14} style={{ display:'inline', verticalAlign:'middle', marginRight:6 }} />Players rated <strong>80–95</strong> overall</div>
           <div className="setup-rule"><Clock size={14} style={{ display:'inline', verticalAlign:'middle', marginRight:6 }} /><strong>15 seconds</strong> to place first bid — or player is skipped</div>
           <div className="setup-rule"><ArrowUpCircle size={14} style={{ display:'inline', verticalAlign:'middle', marginRight:6 }} />After first bid, both can <strong>outbid freely</strong> (+5,000 min)</div>
           <div className="setup-rule"><CheckCircle size={14} style={{ display:'inline', verticalAlign:'middle', marginRight:6 }} />Click <strong>Confirm</strong> to lock in the current highest bid</div>
-          <div className="setup-rule"><Trophy size={14} style={{ display:'inline', verticalAlign:'middle', marginRight:6 }} />Sign <strong>11 players</strong> to complete your squad</div>
+          <div className="setup-rule"><Trophy size={14} style={{ display:'inline', verticalAlign:'middle', marginRight:6 }} /><strong>Both managers</strong> must sign <strong>11 players</strong> to end the auction</div>
         </div>
         <button
           id="btn-start-auction"
@@ -914,17 +914,16 @@ export default function Auction() {
     showToast(`${pl.name} bid ${fmt(amount)} tokens!`, 'info', 1500);
   }, [currentPlayer, currentBid, players]);
 
-  // ── Confirm: lock in the sale — called by clicking "Confirm Purchase" ─────
+  // ── Confirm: lock in the sale ────────────────────────────────────────
   const handleConfirm = useCallback(() => {
     if (!currentBid || !currentPlayer) return;
-    if (soldRef.current) return;           // double-click / double-call guard
+    if (soldRef.current) return;
     soldRef.current = true;
 
     const { playerIndex, amount } = currentBid;
-    const snapshot = currentPlayer;        // capture current player before advance
+    const snapshot = currentPlayer;
 
     setPlayers(prev => {
-      // Idempotency check: skip if this player is somehow already in the squad
       const already = prev[playerIndex].squad.some(
         s => s.name === snapshot.name && s.overall === snapshot.overall
       );
@@ -943,10 +942,11 @@ export default function Auction() {
       const winner = next[playerIndex];
       showToast(`${winner.name} signed ${snapshot.name}!`, 'success', 2500);
 
+      // Auction ends only when BOTH managers have full squads
       if (next.every(p => p.squad.length >= TOTAL_SLOTS)) {
         setTimeout(() => setPhase('results'), 700);
       } else {
-        setTimeout(() => advancePlayer(), 500);
+        setTimeout(() => advancePlayer(next), 500);
       }
       return next;
     });
